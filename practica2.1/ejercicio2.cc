@@ -1,8 +1,20 @@
+#include <sys/types.h>
 #include <sys/socket.h>
+#include <unistd.h>
 #include <netdb.h>
 #include <string.h>
 
 #include <iostream>
+
+#define BUFFER_SIZE 80
+
+struct tm* getTime(){
+
+    time_t curr_time;
+    time(&curr_time);
+
+    return localtime(&curr_time);
+}
 
 int main (int argc, char** argv){
     struct addrinfo hints;
@@ -20,13 +32,6 @@ int main (int argc, char** argv){
         return -1;
     }
 
-    // for(auto i = res; i != nullptr; i = i->ai_next){
-    //     char host[NI_MAXHOST];
-
-    //     getnameinfo(i->ai_addr, i->ai_addrlen, host, NI_MAXHOST, NULL, NI_MAXSERV, NI_NUMERICHOST);
-    //     std::cout << host << " " << i->ai_family << " " << i->ai_socktype << '\n';
-    // }
-
     int sd = socket(res->ai_family, res->ai_socktype, 0);
 
     if( sd==-1 ){
@@ -43,8 +48,10 @@ int main (int argc, char** argv){
 
     freeaddrinfo(res);
 
-    while(true){
-        char buffer[80];
+    bool end = false;
+
+    while(!end){
+        char buffer[BUFFER_SIZE];
 
         char host[NI_MAXHOST];
         char serv[NI_MAXSERV];
@@ -52,12 +59,14 @@ int main (int argc, char** argv){
         struct sockaddr cliente;
         socklen_t clientelen = sizeof(struct sockaddr);
 
-        int bytes = recvfrom(sd, (void *) buffer, 80, 0, &cliente, &clientelen);
+        int bytes = recvfrom(sd, (void *) buffer, BUFFER_SIZE-1, 0, &cliente, &clientelen);
 
         if( bytes==-1 ){
             std::cerr << "[recvfrom]: " << strerror(errno) << '\n';
             return -1;
         }
+
+        buffer[bytes] = '\0';
 
         int gni = getnameinfo(&cliente, clientelen, host, NI_MAXHOST, serv, NI_MAXSERV, NI_NUMERICHOST | NI_NUMERICSERV);
 
@@ -66,10 +75,44 @@ int main (int argc, char** argv){
             return -1;        
         }
 
-        std::cout << "Host: " << host << " Port: " << serv << '\n';
-        std::cout << "\tData: " << buffer << '\n';
+        std::cout << bytes << " bytes de " << host << ":" << serv << '\n';
+
+        int st;
+        char text[BUFFER_SIZE];
+        struct tm* curr_tm = getTime();
+
+        if(curr_tm==NULL){
+            std::cerr << "Error: " << strerror(errno) << '\n';
+            return -1;
+        }
+
+        switch (std::tolower(buffer[0]))
+        {
+        case 't':
+            bytes = strftime(text, BUFFER_SIZE, "%T %p", curr_tm);
+            st = sendto(sd, text, bytes, 0, &cliente, clientelen);
+            break;
+        case 'd':
+            bytes = strftime(text, BUFFER_SIZE, "%F", curr_tm);
+            st = sendto(sd, text, bytes, 0, &cliente, clientelen);
+            break;
+        case 'q':
+            std::cout << "Saliendo...\n";
+            end = true;
+            break;
+        default:
+            std::cout << "Comando no soportado " << buffer;
+            break;
+        }
+
+        if( st==-1 ){
+            std::cerr << "[sendto]: " << strerror(errno) << '\n';
+            return -1;
+        }
 
     }
+
+    close(sd);
 
     return 0;
 }
