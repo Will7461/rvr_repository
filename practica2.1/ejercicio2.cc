@@ -7,7 +7,7 @@
 #include <iostream>
 
 #define BUFFER_SIZE 80
-
+//Funcion auxiliar para obtener el struct tm
 struct tm* getTime(){
 
     time_t curr_time;
@@ -17,6 +17,11 @@ struct tm* getTime(){
 }
 
 int main (int argc, char** argv){
+    if(argc!=3){
+        std::cerr << "Usage: " << argv[0] << " ip port\n";
+        return 1;
+    }
+
     struct addrinfo hints;
     struct addrinfo* res;
 
@@ -49,7 +54,7 @@ int main (int argc, char** argv){
     freeaddrinfo(res);
 
     bool end = false;
-
+    //Bucle para terminar el servidor
     while(!end){
         char buffer[BUFFER_SIZE];
 
@@ -67,7 +72,7 @@ int main (int argc, char** argv){
         }
 
         buffer[bytes] = '\0';
-
+        //Obtener informacion del cliente
         int gni = getnameinfo(&cliente, clientelen, host, NI_MAXHOST, serv, NI_MAXSERV, NI_NUMERICHOST | NI_NUMERICSERV);
 
         if( gni != 0 ){
@@ -85,7 +90,7 @@ int main (int argc, char** argv){
             std::cerr << "Error: " << strerror(errno) << '\n';
             return -1;
         }
-
+        //Opcion elegida
         switch (std::tolower(buffer[0]))
         {
         case 't':
@@ -101,7 +106,7 @@ int main (int argc, char** argv){
             end = true;
             break;
         default:
-            std::cout << "Comando no soportado " << buffer;
+            std::cout << "Comando no soportado " << buffer << '\n';
             break;
         }
 
