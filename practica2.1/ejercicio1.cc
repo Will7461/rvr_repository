@@ -23,9 +23,18 @@ int main (int argc, char** argv){
     for(auto i = res; i != nullptr; i = i->ai_next){
         char host[NI_MAXHOST];
 
-        getnameinfo(i->ai_addr, i->ai_addrlen, host, NI_MAXHOST, NULL, NI_MAXSERV, NI_NUMERICHOST);
+        int gni = getnameinfo(i->ai_addr, i->ai_addrlen, host, NI_MAXHOST, NULL, NI_MAXSERV, NI_NUMERICHOST);
+
+        if( gni != 0 ){
+        std::cerr << "Error: " << gai_strerror(gni) << '\n';
+        
+        return -1;
+    }
+
         std::cout << host << " " << i->ai_family << " " << i->ai_socktype << '\n';
     }
 
     freeaddrinfo(res);
+    
+    return 0;
 }
