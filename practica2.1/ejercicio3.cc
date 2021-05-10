@@ -34,14 +34,6 @@ int main (int argc, char** argv){
         std::cerr << "[socket]: " << strerror(errno) << '\n';
         return -1;
     }
-
-    int c = connect(sd, res->ai_addr, res->ai_addrlen);
-
-    if( c==-1 ){
-        std::cerr << "[connect]: " << strerror(errno) << '\n';
-        return -1;
-    }
-
     
     bool waitResponse = false;
     if(std::tolower(*argv[3])=='t' || std::tolower(*argv[3])=='d') waitResponse = true;
