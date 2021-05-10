@@ -46,12 +46,12 @@ int main (int argc, char** argv){
 
     int b = bind(sd, res->ai_addr, res->ai_addrlen);
 
+    freeaddrinfo(res);
+    
     if( b==-1 ){
         std::cerr << "[bind]: " << strerror(errno) << '\n';
         return -1;
     }
-
-    freeaddrinfo(res);
 
     bool end = false;
     //Bucle principal

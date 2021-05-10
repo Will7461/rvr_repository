@@ -38,12 +38,12 @@ int main (int argc, char** argv){
 
     int b = bind(sd, res->ai_addr, res->ai_addrlen);
 
+    freeaddrinfo(res);
+
     if( b==-1 ){
         std::cerr << "[bind]: " << strerror(errno) << '\n';
         return -1;
     }
-
-    freeaddrinfo(res);
 
     int l = listen(sd, 16);
 
@@ -92,7 +92,12 @@ int main (int argc, char** argv){
 
         buffer[bytes] = '\0';
 
-        send(cliente_sd, buffer, bytes, 0);
+        int s = send(cliente_sd, buffer, bytes, 0);
+
+        if( s==-1 ){
+            std::cerr << "[send]: " << strerror(errno) << '\n';
+            return -1;
+        }
     }
 
     close(sd);
