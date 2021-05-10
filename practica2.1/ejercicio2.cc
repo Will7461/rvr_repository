@@ -54,7 +54,7 @@ int main (int argc, char** argv){
     freeaddrinfo(res);
 
     bool end = false;
-    //Bucle para terminar el servidor
+    //Bucle principal
     while(!end){
         char buffer[BUFFER_SIZE];
 
