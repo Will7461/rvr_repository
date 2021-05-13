@@ -100,6 +100,8 @@ int main (int argc, char** argv){
         }
     }
 
+    close(cliente_sd);
+
     close(sd);
 
     return 0;
