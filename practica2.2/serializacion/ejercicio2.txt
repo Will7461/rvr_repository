@@ -1,1 +1,1 @@
-El comando od muestra un archivo en un formato especifico, es este caso con la opcion -s muestra palabras de 16 bits como valores decimal con signo, y con -a muestra bytes como caracteres y con su correspondiente nombre ASCII.
+El comando od muestra un archivo en un formato especifico, es este caso con la opcion -s muestra palabras de 16 bits como valores decimal con signo, y con -a muestra bytes como caracteres y con su correspondiente nombre ASCII. Gracias a esto podemos mostrar el binario generado por la serializacion a algo más legible por el humano.
