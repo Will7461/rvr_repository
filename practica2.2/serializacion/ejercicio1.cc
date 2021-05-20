@@ -39,6 +39,8 @@ public:
 
     int from_bin(char * data)
     {
+        if(data==NULL) return -1;
+
         char* tmp = data;
 
         memcpy(name, tmp, MAX_NAME * sizeof(char));
@@ -93,7 +95,12 @@ int main(int argc, char **argv)
 
     close(fd);
     // 4. "Deserializar" en one_r
-    one_r.from_bin(buff);
+    int fb = one_r.from_bin(buff);
+
+    if(fb == -1){
+        std::cerr << "Fallo en llamada from_bin\n";
+    }
+
     // 5. Mostrar el contenido de one_r
     one_r.show_info();
 
