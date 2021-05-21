@@ -10,6 +10,31 @@ void ChatMessage::to_bin()
     memset(_data, 0, MESSAGE_SIZE);
 
     //Serializar los campos type, nick y message en el buffer _data
+    char* tmp = _data;
+
+    memcpy(tmp, &type, sizeof(uint8_t));
+
+    tmp += sizeof(uint8_t);
+
+    if(nick.size()>7){
+        std::cerr << "Nick demasiado largo para serializar\n"; 
+        return;
+    }
+
+    nick[nick.size()] = '\0';
+
+    memcpy(tmp, nick.c_str(), nick.size() + 1);
+
+    tmp += 8 * sizeof(char);
+
+    if(message.size()>79){
+        std::cerr << "Message demasiado largo para serializar\n"; 
+        return;
+    }
+
+    message[message.size()] = '\0';
+
+    memcpy(tmp, message.c_str(), message.size() + 1);
 }
 
 int ChatMessage::from_bin(char * bobj)
@@ -19,6 +44,20 @@ int ChatMessage::from_bin(char * bobj)
     memcpy(static_cast<void *>(_data), bobj, MESSAGE_SIZE);
 
     //Reconstruir la clase usando el buffer _data
+
+    if(_data==NULL) return -1;
+
+    char* tmp = _data;
+
+    memcpy(&type, tmp, sizeof(uint8_t));
+
+    tmp += sizeof(uint8_t);
+
+    memcpy((void *)nick.c_str(), tmp, 8 * sizeof(char));
+
+    tmp += 8 * sizeof(char);
+
+    memcpy((void *)message.c_str(), tmp, 80 * sizeof(char));
 
     return 0;
 }
