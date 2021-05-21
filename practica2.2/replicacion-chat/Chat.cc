@@ -16,23 +16,9 @@ void ChatMessage::to_bin()
 
     tmp += sizeof(uint8_t);
 
-    if(nick.size()>7){
-        std::cerr << "Nick demasiado largo para serializar\n"; 
-        return;
-    }
-
-    nick[nick.size()] = '\0';
-
     memcpy(tmp, nick.c_str(), nick.size() + 1);
 
     tmp += 8 * sizeof(char);
-
-    if(message.size()>79){
-        std::cerr << "Message demasiado largo para serializar\n"; 
-        return;
-    }
-
-    message[message.size()] = '\0';
 
     memcpy(tmp, message.c_str(), message.size() + 1);
 }
@@ -53,10 +39,12 @@ int ChatMessage::from_bin(char * bobj)
 
     tmp += sizeof(uint8_t);
 
-    memcpy((void *)nick.c_str(), tmp, 8 * sizeof(char));
+    nick.resize(8 * sizeof(char));
+    memcpy((void*)nick.c_str(), tmp, 8 * sizeof(char));
 
     tmp += 8 * sizeof(char);
 
+    message.resize(80 * sizeof(char));
     memcpy((void *)message.c_str(), tmp, 80 * sizeof(char));
 
     return 0;
@@ -113,7 +101,7 @@ void ChatServer::do_messages()
         }
         case ChatMessage::MESSAGE:{
             for(auto &cs : clients){
-                if(cs.get() == s) continue;
+                if(*(cs.get()) == *s) continue;
                 else{
                     int s = socket.send(cm, *(cs.get()));
                     if(s==-1){
@@ -166,6 +154,10 @@ void ChatClient::input_thread()
         if(msg=="!q"){
             logout();
             break;
+        }
+        else if(msg.length()>80){
+            std::cerr << "Mensaje demasiado largo para ser enviado\n";
+            continue;
         }
 
         ChatMessage em(nick,msg);
