@@ -79,6 +79,55 @@ void ChatServer::do_messages()
         // - LOGIN: Añadir al vector clients
         // - LOGOUT: Eliminar del vector clients
         // - MESSAGE: Reenviar el mensaje a todos los clientes (menos el emisor)
+
+        ChatMessage cm;
+        Socket* s;
+        int soc = socket.recv(cm, s);
+        if(soc==-1){
+            std::cerr << "Error en socket.recv()\n";
+            return;
+        }
+
+        switch (cm.type)
+        {
+        case ChatMessage::LOGIN:{
+            std::unique_ptr<Socket> uS(s);
+            clients.push_back(std::move(uS));
+            std::cout << "[ " << cm.nick << " joined the chat ]\n";
+            break;
+        }
+        case ChatMessage::LOGOUT:{
+            auto it = clients.begin();
+            while (it != clients.end())
+            {
+                if( *((*it).get()) == *s ) break;
+                ++it;
+            }
+
+            if(it == clients.end()) std::cerr << "[logout] No se ha encontrado cliente que desconectar\n";
+            else{
+                clients.erase(it);
+                std::cout << "[ " << cm.nick << " left the chat ]\n";
+            }
+            break;
+        }
+        case ChatMessage::MESSAGE:{
+            for(auto &cs : clients){
+                if(cs.get() == s) continue;
+                else{
+                    int s = socket.send(cm, *(cs.get()));
+                    if(s==-1){
+                        std::cerr << "[message]: No se ha enviado el mensage correctamente\n";
+                        return;
+                    }
+                }
+            }
+            break;
+        }
+        default:
+            std::cerr << "Tipo de mensaje no soportado.\n";
+            break;
+        }
     }
 }
 
