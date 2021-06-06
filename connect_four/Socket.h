@@ -43,14 +43,12 @@ class Socket
 {
 public:
     /**
-     * El máximo teórico de un mensaje UDP es 2^16, del que hay que
-     * descontar la cabecera UDP e IP (con las posibles opciones). Se debe
-     * utilizar esta constante para definir buffers de recepción.
+     * Default para TCP
      */
     static const int32_t MAX_MESSAGE_SIZE = 32768;
 
     /**
-     *  Construye el socket UDP con la dirección y puerto dados. Esta función
+     *  Construye el socket TCP con la dirección y puerto dados. Esta función
      *  usara getaddrinfo para obtener la representación binaria de dirección y
      *  puerto.
      *
@@ -66,8 +64,13 @@ public:
      */
     Socket(struct sockaddr * _sa, socklen_t _sa_len):sd(-1), sa(*_sa),
         sa_len(_sa_len){};
+    
+    Socket(int _sd, struct sockaddr * _sa, socklen_t _sa_len):sd(_sd), sa(*_sa),
+        sa_len(_sa_len){};
 
-    virtual ~Socket(){};
+    virtual ~Socket(){
+        ::close(sd);
+    };
 
     /**
      *  Recibe un mensaje de aplicación
@@ -107,6 +110,23 @@ public:
     {
         return ::bind(sd, (const struct sockaddr *) &sa, sa_len);
     }
+
+    /**
+     *  Se prepara el descriptor del socket para aceptar conexiones, hasta n conexiones se podrán poner en cola.
+     */
+    int listen(int n)
+    {
+        return ::listen(sd, n);
+    }
+
+    /**
+     *  Abre una conexion en el descriptor del socket.
+     */
+    int connect()
+    {
+        return ::connect(sd, (const struct sockaddr *) &sa, sa_len);
+    }
+    int accept(struct sockaddr& client, socklen_t& clientelen);
 
     friend std::ostream& operator<<(std::ostream& os, const Socket& dt);
 

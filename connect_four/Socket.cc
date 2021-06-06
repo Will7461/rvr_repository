@@ -5,14 +5,14 @@
 
 Socket::Socket(const char * address, const char * port):sd(-1)
 {
-    //Construir un socket de tipo AF_INET y SOCK_DGRAM usando getaddrinfo.
+    //Construir un socket de tipo AF_INET y SOCK_STREAM usando getaddrinfo.
     struct addrinfo hints;
     struct addrinfo* res;
 
     memset((void * ) &hints, 0, sizeof(struct addrinfo));
 
     hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_socktype = SOCK_STREAM;
 
     int rc = getaddrinfo(address, port, &hints, &res);
 
@@ -43,7 +43,7 @@ int Socket::recv(Serializable &obj, Socket * &sock)
 
     char buffer[MAX_MESSAGE_SIZE];
 
-    ssize_t bytes = ::recvfrom(sd, buffer, MAX_MESSAGE_SIZE, 0, &sa, &sa_len);
+    ssize_t bytes = ::recv(sd, buffer, MAX_MESSAGE_SIZE, 0);
 
     if ( bytes <= 0 )
     {
@@ -65,9 +65,33 @@ int Socket::send(Serializable& obj, const Socket& sock)
     //Serializar el objeto
     obj.to_bin();
     //Enviar el objeto binario a sock usando el socket sd
-    int st = sendto(sd, obj.data(), obj.size(), 0, &sock.sa, sock.sa_len);
+    int s = ::send(sd, obj.data(), obj.size(), 0);
 
-    return (st>=0) ? 0 : -1; 
+    return (s>=0) ? 0 : -1;
+}
+
+int Socket::accept(struct sockaddr& client, socklen_t& clientelen){
+
+    int cliente_sd = ::accept(sd, &client, &clientelen);
+
+    if( cliente_sd==-1 ){
+    std::cerr << "[accept]: " << strerror(errno) << '\n';
+    return;
+    }
+
+    char host[NI_MAXHOST];
+    char serv[NI_MAXSERV];
+    //Obtener informacion del cliente
+    int gni = getnameinfo(&client, clientelen, host, NI_MAXHOST, serv, NI_MAXSERV, NI_NUMERICHOST | NI_NUMERICSERV);
+
+    if( gni != 0 ){
+    std::cerr << "Error: " << gai_strerror(gni) << '\n';
+    return;        
+    }
+
+    std::cout << "Conexión desde " << host << " " << serv << '\n';
+
+    return cliente_sd;
 }
 
 bool operator== (const Socket &s1, const Socket &s2)

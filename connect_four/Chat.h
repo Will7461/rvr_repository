@@ -3,6 +3,7 @@
 #include <string.h>
 #include <vector>
 #include <memory>
+#include <thread>
 
 #include "Serializable.h"
 #include "Socket.h"
@@ -62,13 +63,14 @@ public:
     ChatServer(const char * s, const char * p): socket(s, p)
     {
         socket.bind();
+        socket.listen(16);
     };
 
     /**
-     *  Thread principal del servidor recive mensajes en el socket y
+     *  Thread principal del servidor recibe mensajes en el socket y
      *  lo distribuye a los clientes. Mantiene actualizada la lista de clientes
      */
-    void do_messages();
+    void do_conexions();
 
 private:
     /**
@@ -98,7 +100,9 @@ public:
      * @param n nick del usuario
      */
     ChatClient(const char * s, const char * p, const char * n):socket(s, p),
-        nick(n){};
+        nick(n){
+            socket.connect();
+        };
 
     /**
      *  Envía el mensaje de login al servidor
