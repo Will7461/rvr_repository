@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <unistd.h>
 
 #include <ostream>
 
@@ -68,9 +69,7 @@ public:
     Socket(int _sd, struct sockaddr * _sa, socklen_t _sa_len):sd(_sd), sa(*_sa),
         sa_len(_sa_len){};
 
-    virtual ~Socket(){
-        ::close(sd);
-    };
+    virtual ~Socket(){close(sd);};
 
     /**
      *  Recibe un mensaje de aplicación

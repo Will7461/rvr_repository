@@ -76,7 +76,7 @@ int Socket::accept(struct sockaddr& client, socklen_t& clientelen){
 
     if( cliente_sd==-1 ){
     std::cerr << "[accept]: " << strerror(errno) << '\n';
-    return;
+    return -1;
     }
 
     char host[NI_MAXHOST];
@@ -86,7 +86,7 @@ int Socket::accept(struct sockaddr& client, socklen_t& clientelen){
 
     if( gni != 0 ){
     std::cerr << "Error: " << gai_strerror(gni) << '\n';
-    return;        
+    return -1;        
     }
 
     std::cout << "Conexión desde " << host << " " << serv << '\n';

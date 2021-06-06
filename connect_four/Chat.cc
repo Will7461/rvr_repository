@@ -56,7 +56,8 @@ int ChatMessage::from_bin(char * bobj)
 class MessageThread
 {
 public:
-    MessageThread(int sd, struct sockaddr client, socklen_t clientlen) : clientSocket_(sd, &client, clientlen){};
+    MessageThread(int sd, struct sockaddr client, socklen_t clientlen, std::mutex& _mtx, std::vector<std::unique_ptr<Socket>>& _clientsVector) : clientSocket_(sd, &client, clientlen),
+    mtx(_mtx), clientsVector(_clientsVector){};
     
     void do_conexion()
     {
@@ -86,30 +87,34 @@ public:
             {
             case ChatMessage::LOGIN:{
                 std::unique_ptr<Socket> uS(s);
-                clients.push_back(std::move(uS));
+                mtx.lock();
+                clientsVector.push_back(std::move(uS));
+                mtx.unlock();
                 std::cout << "[ " << cm.nick << " joined the chat ]\n";
                 break;
             }
             case ChatMessage::LOGOUT:{
-                auto it = clients.begin();
-                while (it != clients.end())
+                auto it = clientsVector.begin();
+                while (it != clientsVector.end())
                 {
                     if( *((*it).get()) == *s ) break;
                     ++it;
                 }
 
-                if(it == clients.end()) std::cerr << "[logout] No se ha encontrado cliente que desconectar\n";
+                if(it == clientsVector.end()) std::cerr << "[logout] No se ha encontrado cliente que desconectar\n";
                 else{
-                    clients.erase(it);
+                    mtx.lock();
+                    clientsVector.erase(it);
+                    mtx.unlock();
                     std::cout << "[ " << cm.nick << " left the chat ]\n";
                 }
                 break;
             }
             case ChatMessage::MESSAGE:{
-                for(auto &cs : clients){
+                for(auto &cs : clientsVector){
                     if(*(cs.get()) == *s) continue;
                     else{
-                        int s = socket.send(cm, *(cs.get()));
+                        int s = clientSocket_.send(cm, *(cs.get()));
                         if(s==-1){
                             std::cerr << "[message]: No se ha enviado el mensage correctamente\n";
                             return;
@@ -123,11 +128,12 @@ public:
                 break;
             }
         }
-
     }
     
 private:
 Socket clientSocket_;
+std::mutex& mtx;
+std::vector<std::unique_ptr<Socket>>& clientsVector;
 };
 
 // -----------------------------------------------------------------------------
@@ -144,7 +150,13 @@ void ChatServer::do_conexions()
         socklen_t clientlen = sizeof(struct sockaddr);
         int client_sd = socket.accept(client, clientlen);
 
-        MessageThread *mt = new MessageThread(client_sd, client, clientlen);
+        if( client_sd==-1 ){
+            std::cerr << "Error at socket.accept()" << strerror(errno) << '\n';
+            return;
+        }
+
+        MessageThread *mt = new MessageThread(client_sd, client, clientlen, clients_mtx, clients);
+
         std::thread([&mt](){
             mt->do_conexion();
 

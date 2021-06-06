@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 #include <thread>
+#include <mutex>
 
 #include "Serializable.h"
 #include "Socket.h"
@@ -73,6 +74,7 @@ public:
     void do_conexions();
 
 private:
+    std::mutex clients_mtx;
     /**
      *  Lista de clientes conectados al servidor de Chat, representados por
      *  su socket
