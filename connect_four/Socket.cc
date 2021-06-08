@@ -65,7 +65,7 @@ int Socket::send(Serializable& obj)
     //Serializar el objeto
     obj.to_bin();
     //Enviar el objeto binario a sock usando el socket sd
-    int s = ::send(sd, obj.data(), obj.size(), 0);
+    int s = ::send(sock.sd, obj.data(), obj.size(), 0);
 
     return (s>=0) ? 0 : -1;
 }
