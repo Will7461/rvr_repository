@@ -115,7 +115,7 @@ public:
                 for(auto &cs : clientsVector){
                     if(*(cs.get()) == clientSocket_) continue;
                     else{
-                        int s = clientSocket_.send(cm, *(cs.get()));
+                        int s = (cs.get())->send(cm);
                         if(s==-1){
                             std::cerr << "[message]: No se ha enviado el mensage correctamente\n";
                             return;
@@ -176,7 +176,7 @@ void ChatClient::login()
     ChatMessage em(nick, msg);
     em.type = ChatMessage::LOGIN;
 
-    socket.send(em, socket);
+    socket.send(em);
 }
 
 void ChatClient::logout()
@@ -187,7 +187,7 @@ void ChatClient::logout()
     ChatMessage em(nick, msg);
     em.type = ChatMessage::LOGOUT;
 
-    socket.send(em, socket);
+    socket.send(em);
 }
 
 void ChatClient::input_thread()
@@ -211,7 +211,7 @@ void ChatClient::input_thread()
         em.type = ChatMessage::MESSAGE;
 
         // Enviar al servidor usando socket
-        socket.send(em, socket);
+        socket.send(em);
     }
 }
 

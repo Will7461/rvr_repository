@@ -91,6 +91,8 @@ public:
         return recv(obj, s);
     }
 
+    int send(Serializable& obj);
+
     /**
      *  Envía un mensaje de aplicación definido por un objeto Serializable.
      *

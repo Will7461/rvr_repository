@@ -60,12 +60,22 @@ int Socket::recv(Serializable &obj, Socket * &sock)
     return 0;
 }
 
-int Socket::send(Serializable& obj, const Socket& sock)
+int Socket::send(Serializable& obj)
 {
     //Serializar el objeto
     obj.to_bin();
     //Enviar el objeto binario a sock usando el socket sd
     int s = ::send(sd, obj.data(), obj.size(), 0);
+
+    return (s>=0) ? 0 : -1;
+}
+
+int Socket::send(Serializable& obj, const Socket& sock)
+{
+    //Serializar el objeto
+    obj.to_bin();
+    //Enviar el objeto binario a sock usando el socket sd
+    int s = ::send(sock.sd, obj.data(), obj.size(), 0);
 
     return (s>=0) ? 0 : -1;
 }
