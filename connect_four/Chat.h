@@ -52,6 +52,62 @@ public:
     std::string message;
 };
 
+
+class PlayMessage: public Serializable
+{
+public:
+    static const size_t MESSAGE_SIZE = sizeof(char) * 88 + sizeof(uint8_t);
+
+    enum MessageType
+    {
+        INITIAL_TURN = 0,
+        PLAY = 1
+    };
+
+    PlayMessage(){};
+
+    PlayMessage(const std::string& n, const std::string& m):nick(n),message(m){};
+
+    void to_bin();
+
+    int from_bin(char * bobj);
+
+    uint8_t type;
+
+    std::string nick;
+    std::string message;
+};
+
+class LobbyMessage: public Serializable
+{
+public:
+    static const size_t MESSAGE_SIZE = sizeof(uint8_t) + sizeof(std::string) * 2 + sizeof(std::vector<std::string>(10));
+    
+    enum MessageType
+    {
+        LOBBY_REQUEST = 0,
+        LOBBY_ACCEPT  = 1,
+        LOBBY_DENY = 2,
+        LOBBY_ASK_LIST = 3,
+        LOBBY_SEND_LIST = 4
+    };
+
+    LobbyMessage(){};
+
+    LobbyMessage(const std::string& n, const std::string& lobbyN/*, const std::vector<std::string> &lobbyL*/):nick(n),lobbyName(lobbyN)/*, lobbyList(lobbyL)*/{
+    };
+
+    void to_bin();
+
+    int from_bin(char * bobj);
+
+    uint8_t type;
+
+    std::string nick;
+    std::string lobbyName;
+    //std::vector<std::string> lobbyList;
+};
+
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 
