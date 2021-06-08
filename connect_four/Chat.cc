@@ -77,6 +77,7 @@ public:
 
             ChatMessage cm;
             Socket* s;
+            s = &clientSocket_;
             int soc = clientSocket_.recv(cm);
             if(soc==-1){
                 std::cerr << "Error en socket.recv()\n";
@@ -112,7 +113,7 @@ public:
             }
             case ChatMessage::MESSAGE:{
                 for(auto &cs : clientsVector){
-                    if(*(cs.get()) == *s) continue;
+                    if(*(cs.get()) == clientSocket_) continue;
                     else{
                         int s = clientSocket_.send(cm, *(cs.get()));
                         if(s==-1){
