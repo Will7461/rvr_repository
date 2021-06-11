@@ -58,11 +58,13 @@ class MessageThread
 public:
     MessageThread(int sd, struct sockaddr client, socklen_t clientlen, std::mutex& _mtx, std::vector<std::unique_ptr<Socket>>& _clientsVector) : clientSocket_(sd, &client, clientlen),
     mtx(_mtx), clientsVector(_clientsVector){};
+    ~MessageThread(){};
     
     void do_conexion()
     {
+        bool active = true;
         //Gestion de la conexion
-        while (true)
+        while (active)
         {
             /*
             * NOTA: los clientes están definidos con "smart pointers", es necesario
@@ -76,8 +78,7 @@ public:
             // - MESSAGE: Reenviar el mensaje a todos los clientes (menos el emisor)
 
             ChatMessage cm;
-            Socket* s;
-            s = &clientSocket_;
+
             int soc = clientSocket_.recv(cm);
             if(soc==-1){
                 std::cerr << "Error en socket.recv()\n";
@@ -87,7 +88,7 @@ public:
             switch (cm.type)
             {
             case ChatMessage::LOGIN:{
-                std::unique_ptr<Socket> uS(s);
+                std::unique_ptr<Socket> uS(&clientSocket_);
                 mtx.lock();
                 clientsVector.push_back(std::move(uS));
                 mtx.unlock();
@@ -98,7 +99,7 @@ public:
                 auto it = clientsVector.begin();
                 while (it != clientsVector.end())
                 {
-                    if( *((*it).get()) == *s ) break;
+                    if( *((*it).get()) == clientSocket_ ) break;
                     ++it;
                 }
 
@@ -108,6 +109,7 @@ public:
                     clientsVector.erase(it);
                     mtx.unlock();
                     std::cout << "[ " << cm.nick << " left the chat ]\n";
+                    active = false;
                 }
                 break;
             }
