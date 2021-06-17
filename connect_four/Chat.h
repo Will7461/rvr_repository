@@ -26,7 +26,7 @@
  *  +-------------------+
  *
  */
-class ChatMessage: public Serializable
+class Message: public Serializable
 {
 public:
     static const size_t MESSAGE_SIZE = sizeof(char) * 88 + sizeof(uint8_t);
@@ -35,38 +35,13 @@ public:
     {
         LOGIN   = 0,
         MESSAGE = 1,
-        LOGOUT  = 2
+        LOGOUT  = 2,
+        LOBBY = 3
     };
 
-    ChatMessage(){};
+    Message(){};
 
-    ChatMessage(const std::string& n, const std::string& m):nick(n),message(m){};
-
-    void to_bin();
-
-    int from_bin(char * bobj);
-
-    uint8_t type;
-
-    std::string nick;
-    std::string message;
-};
-
-
-class PlayMessage: public Serializable
-{
-public:
-    static const size_t MESSAGE_SIZE = sizeof(char) * 88 + sizeof(uint8_t);
-
-    enum MessageType
-    {
-        INITIAL_TURN = 0,
-        PLAY = 1
-    };
-
-    PlayMessage(){};
-
-    PlayMessage(const std::string& n, const std::string& m):nick(n),message(m){};
+    Message(const std::string& n, const std::string& m):nick(n),message(m){};
 
     void to_bin();
 
@@ -106,6 +81,31 @@ public:
     std::string nick;
     std::string lobbyName;
     //std::vector<std::string> lobbyList;
+};
+
+class PlayMessage: public Serializable
+{
+public:
+    static const size_t MESSAGE_SIZE = sizeof(char) * 88 + sizeof(uint8_t);
+
+    enum MessageType
+    {
+        INITIAL_TURN = 0,
+        PLAY = 1
+    };
+
+    PlayMessage(){};
+
+    PlayMessage(const std::string& n, const std::string& m):nick(n),message(m){};
+
+    void to_bin();
+
+    int from_bin(char * bobj);
+
+    uint8_t type;
+
+    std::string nick;
+    std::string message;
 };
 
 // -----------------------------------------------------------------------------
