@@ -5,9 +5,12 @@
 #include <memory>
 #include <thread>
 #include <mutex>
+#include <map>
 
 #include "Serializable.h"
 #include "Socket.h"
+
+#define SYNC_DELAY 0.2
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -135,6 +138,12 @@ private:
      *  su socket
      */
     std::vector<std::unique_ptr<Socket>> clients;
+
+    std::mutex lobbies_mtx;
+    /**
+     *  Map de lobbies
+     */
+    std::map<std::string, bool> lobbies;
 
     /**
      * Socket del servidor

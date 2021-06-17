@@ -1,5 +1,4 @@
 #include "Chat.h"
-#define SYNC_DELAY 0.2
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
@@ -95,9 +94,17 @@ int LobbyMessage::from_bin(char * bobj)
 class MessageThread
 {
 public:
-    MessageThread(int sd, struct sockaddr client, socklen_t clientlen, std::mutex& _mtx, std::vector<std::unique_ptr<Socket>>& _clientsVector) : clientSocket_(sd, &client, clientlen),
-    mtx(_mtx), clientsVector(_clientsVector){};
-    ~MessageThread(){};
+    MessageThread(int sd, struct sockaddr client, socklen_t clientlen, std::mutex* clients_mtx, std::vector<std::unique_ptr<Socket>>* _clientsVector) : 
+    c_mtx(clients_mtx), clientsVector(_clientsVector){
+
+        clientSocket_ = new Socket(sd, &client, clientlen);
+
+    };
+    ~MessageThread(){
+        c_mtx = nullptr;
+        clientsVector = nullptr;
+        clientSocket_ = nullptr;
+    };
     
     void do_conexion()
     {
@@ -118,7 +125,7 @@ public:
 
             Message cm;
 
-            int soc = clientSocket_.recv(cm);
+            int soc = clientSocket_->recv(cm);
             if(soc==-1){
                 std::cerr << "Error en socket.recv()\n";
                 return;
@@ -127,34 +134,34 @@ public:
             switch (cm.type)
             {
             case Message::LOGIN:{
-                std::unique_ptr<Socket> uS(&clientSocket_);
-                mtx.lock();
-                clientsVector.push_back(std::move(uS));
-                mtx.unlock();
+                std::unique_ptr<Socket> uS(clientSocket_);
+                c_mtx->lock();
+                clientsVector->push_back(std::move(uS));
+                c_mtx->unlock();
                 std::cout << "[ " << cm.nick << " joined the chat ]\n";
                 break;
             }
             case Message::LOGOUT:{
-                auto it = clientsVector.begin();
-                while (it != clientsVector.end())
+                auto it = clientsVector->begin();
+                while (it != clientsVector->end())
                 {
-                    if( *((*it).get()) == clientSocket_ ) break;
+                    if( *((*it).get()) == *clientSocket_ ) break;
                     ++it;
                 }
 
-                if(it == clientsVector.end()) std::cerr << "[logout] No se ha encontrado cliente que desconectar\n";
+                if(it == clientsVector->end()) std::cerr << "[logout] No se ha encontrado cliente que desconectar\n";
                 else{
-                    mtx.lock();
-                    clientsVector.erase(it);
-                    mtx.unlock();
+                    c_mtx->lock();
+                    clientsVector->erase(it);
+                    c_mtx->unlock();
                     std::cout << "[ " << cm.nick << " left the chat ]\n";
                     active = false;
                 }
                 break;
             }
             case Message::MESSAGE:{
-                for(auto &cs : clientsVector){
-                    if(*(cs.get()) == clientSocket_) continue;
+                for(auto &cs : *clientsVector){
+                    if(*(cs.get()) == *clientSocket_) continue;
                     else{
                         int s = (cs.get())->send(cm);
                         if(s==-1){
@@ -168,7 +175,7 @@ public:
             case Message::LOBBY:{
                 LobbyMessage lm;
 
-                int soc = clientSocket_.recv(lm);
+                int soc = clientSocket_->recv(lm);
                 if(soc==-1){
                     std::cerr << "Error en socket.recv()\n";
                 }
@@ -178,17 +185,18 @@ public:
                     case LobbyMessage::LOBBY_REQUEST:{
                         // Logica para comprobar si se puede crear un lobby
                         // con lm.lobbyName nombre y crearlo, de momento se acepta sin mas
+                        
 
                         //Especificar primero el tipo de mensaje que se quiere tratar
                         Message em("server","");
                         em.type = Message::LOBBY;
 
-                        clientSocket_.send(em);
+                        clientSocket_->send(em);
 
                         //Enviar el mensaje del tipo correspondiente
                         sleep(SYNC_DELAY);
                         lm.type = LobbyMessage::LOBBY_ACCEPT;
-                        clientSocket_.send(lm);
+                        clientSocket_->send(lm);
 
                         break;
                     }
@@ -200,12 +208,12 @@ public:
                         Message em("server","");
                         em.type = Message::LOBBY;
 
-                        clientSocket_.send(em);
+                        clientSocket_->send(em);
 
                         //Enviar el mensaje del tipo correspondiente
                         sleep(SYNC_DELAY);
                         lm.type = LobbyMessage::LOBBY_SEND_LIST;
-                        clientSocket_.send(lm);
+                        clientSocket_->send(lm);
                         break;
                     }
                     default:
@@ -222,9 +230,9 @@ public:
     }
     
 private:
-Socket clientSocket_;
-std::mutex& mtx;
-std::vector<std::unique_ptr<Socket>>& clientsVector;
+Socket* clientSocket_;
+std::mutex* c_mtx;
+std::vector<std::unique_ptr<Socket>>* clientsVector;
 };
 
 // -----------------------------------------------------------------------------
@@ -246,7 +254,7 @@ void ChatServer::do_conexions()
             return;
         }
 
-        MessageThread *mt = new MessageThread(client_sd, client, clientlen, clients_mtx, clients);
+        MessageThread *mt = new MessageThread(client_sd, client, clientlen, &clients_mtx, &clients);
 
         std::thread([&mt](){
             mt->do_conexion();
@@ -343,8 +351,8 @@ void ChatClient::net_thread()
 
         int r = socket.recv(ms);
         if(r==-1){
-            std::cerr << "Error: no se ha recibido un mensaje correctamente";
-            return;
+            std::cerr << "Conexion cerrada.\n";
+            break;
         }
         //Mostrar en pantalla el mensaje de la forma "nick: mensaje"
         // std::cout << ms.nick << ": " << ms.message << '\n';

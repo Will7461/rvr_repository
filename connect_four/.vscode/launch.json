@@ -5,7 +5,26 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(gdb) Launcha libre",
+            "name": "(gdb) Launch Client",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/cc",
+            "args": ["localhost", "8080", "pepe"],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "(gdb) Launch Server",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/cs",
