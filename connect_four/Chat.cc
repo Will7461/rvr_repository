@@ -64,6 +64,11 @@ void LobbyMessage::to_bin()
     tmp += sizeof(uint8_t);
 
     memcpy(tmp, lobbyName.c_str(), lobbyName.size() + 1);
+
+    for(int i = 0; i<MAX_LOBBIES; i++){
+        tmp += sizeof(std::string);
+        memcpy(tmp, lobbyList[i].c_str(), lobbyList[i].size() + 1);
+    }
 }
 
 int LobbyMessage::from_bin(char * bobj)
@@ -82,8 +87,15 @@ int LobbyMessage::from_bin(char * bobj)
 
     tmp += sizeof(uint8_t);
 
-    lobbyName.resize(80 * sizeof(char));
-    memcpy((void *)lobbyName.c_str(), tmp, 80 * sizeof(char));
+    lobbyName.resize(sizeof(std::string));
+    memcpy((void *)lobbyName.c_str(), tmp, sizeof(std::string));
+
+    for(int i = 0; i<MAX_LOBBIES; i++){
+        tmp += sizeof(std::string);
+
+        lobbyList[i].resize(sizeof(std::string));
+        memcpy((void *)lobbyList[i].c_str(), tmp, sizeof(std::string));
+    }
 
     return 0;
 }
@@ -94,8 +106,9 @@ int LobbyMessage::from_bin(char * bobj)
 class MessageThread
 {
 public:
-    MessageThread(int sd, struct sockaddr client, socklen_t clientlen, std::mutex* clients_mtx, std::vector<std::unique_ptr<Socket>>* _clientsVector) : 
-    c_mtx(clients_mtx), clientsVector(_clientsVector){
+    MessageThread(int sd, struct sockaddr client, socklen_t clientlen, std::mutex* clients_mtx, std::vector<std::unique_ptr<Socket>>* _clientsVector,
+    std::mutex* lobbies_mtx, std::map<std::string, bool>* _lobbiesMap) : 
+    c_mtx(clients_mtx), clientsVector(_clientsVector), l_mtx(lobbies_mtx), lobbiesMap(_lobbiesMap) {
 
         clientSocket_ = new Socket(sd, &client, clientlen);
 
@@ -185,7 +198,6 @@ public:
                     case LobbyMessage::LOBBY_REQUEST:{
                         // Logica para comprobar si se puede crear un lobby
                         // con lm.lobbyName nombre y crearlo, de momento se acepta sin mas
-                        
 
                         //Especificar primero el tipo de mensaje que se quiere tratar
                         Message em("server","");
@@ -195,8 +207,17 @@ public:
 
                         //Enviar el mensaje del tipo correspondiente
                         sleep(SYNC_DELAY);
-                        lm.type = LobbyMessage::LOBBY_ACCEPT;
-                        clientSocket_->send(lm);
+                        l_mtx->lock();
+                        if(lobbiesMap->count(lm.lobbyName) > 0 || lobbiesMap->size()>=10){
+                            lm.type = LobbyMessage::LOBBY_DENY;
+                            clientSocket_->send(lm);
+                        }
+                        else{
+                            lobbiesMap->insert({lm.lobbyName, false});
+                            lm.type = LobbyMessage::LOBBY_ACCEPT;
+                            clientSocket_->send(lm);
+                        }
+                        l_mtx->unlock();
 
                         break;
                     }
@@ -213,7 +234,21 @@ public:
                         //Enviar el mensaje del tipo correspondiente
                         sleep(SYNC_DELAY);
                         lm.type = LobbyMessage::LOBBY_SEND_LIST;
+                        lm.empty_list();
+
+                        int i = 0;
+                        l_mtx->lock();
+                        for (auto const& lobby : *lobbiesMap)
+                        {
+                            if(lobby.second == false){
+                                lm.lobbyList[i] = lobby.first;
+                                i++;
+                            }
+                        }
+                        l_mtx->unlock();
+
                         clientSocket_->send(lm);
+                        
                         break;
                     }
                     default:
@@ -233,6 +268,10 @@ private:
 Socket* clientSocket_;
 std::mutex* c_mtx;
 std::vector<std::unique_ptr<Socket>>* clientsVector;
+
+std::mutex* l_mtx;
+std::map<std::string, bool>* lobbiesMap;
+
 };
 
 // -----------------------------------------------------------------------------
@@ -254,7 +293,8 @@ void ChatServer::do_conexions()
             return;
         }
 
-        MessageThread *mt = new MessageThread(client_sd, client, clientlen, &clients_mtx, &clients);
+        MessageThread *mt = new MessageThread(client_sd, client, clientlen, &clients_mtx, &clients,
+        &lobbies_mtx, &lobbies);
 
         std::thread([&mt](){
             mt->do_conexion();
@@ -359,6 +399,10 @@ void ChatClient::net_thread()
 
         switch (ms.type)
         {
+            case Message::MESSAGE:{
+                std::cout << ms.message << '\n';
+                break;
+            }
             case Message::LOBBY:{
                 LobbyMessage lm;
 
@@ -376,11 +420,14 @@ void ChatClient::net_thread()
                     }
                     case LobbyMessage::LOBBY_DENY:{
                         
-                        std::cout << "Lobby " << lm.lobbyName << " denegado por nombre\n";
+                        std::cout << "Lobby " << lm.lobbyName << " denegado por nombre repetido o máximo de lobbies creados.\n";
                         break;
                     }
                     case LobbyMessage::LOBBY_SEND_LIST:{
-                        std::cout << "Lista de lobbies: \n";
+                        std::cout << "Lista de lobbies:\n";
+                        for(std::string lobbyName : lm.lobbyList){
+                            if(lobbyName.find("none") == std::string::npos) std::cout << lobbyName << '\n';
+                        }
                         break;
                     }
                     default:

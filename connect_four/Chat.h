@@ -11,6 +11,7 @@
 #include "Socket.h"
 
 #define SYNC_DELAY 0.2
+#define MAX_LOBBIES 10
 
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
@@ -59,7 +60,7 @@ public:
 class LobbyMessage: public Serializable
 {
 public:
-    static const size_t MESSAGE_SIZE = sizeof(uint8_t) + sizeof(std::string) * 2 + sizeof(std::vector<std::string>(10));
+    static const size_t MESSAGE_SIZE = sizeof(uint8_t) + (sizeof(std::string) * (MAX_LOBBIES + 1));
     
     enum MessageType
     {
@@ -70,19 +71,28 @@ public:
         LOBBY_SEND_LIST = 4
     };
 
-    LobbyMessage(){};
+    LobbyMessage(){
+        empty_list();
+    };
 
-    LobbyMessage(const std::string& lobbyN/*, const std::vector<std::string> &lobbyL*/): lobbyName(lobbyN)/*, lobbyList(lobbyL)*/{
+    LobbyMessage(const std::string& lobbyN): lobbyName(lobbyN){
+        empty_list();
     };
 
     void to_bin();
 
     int from_bin(char * bobj);
 
+    void empty_list(){
+        for(int i = 0; i<MAX_LOBBIES; i++){
+            lobbyList[i] = "none";
+        }
+    }
+
     uint8_t type;
 
     std::string lobbyName;
-    //std::vector<std::string> lobbyList;
+    std::string lobbyList[MAX_LOBBIES];
 };
 
 class PlayMessage: public Serializable
@@ -141,7 +151,7 @@ private:
 
     std::mutex lobbies_mtx;
     /**
-     *  Map de lobbies
+     *  Map de lobbies<Lobby Name,Lobby Full>
      */
     std::map<std::string, bool> lobbies;
 
