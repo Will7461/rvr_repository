@@ -1,4 +1,5 @@
 #include "Chat.h"
+#define SYNC_DELAY 0.2
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
@@ -63,10 +64,6 @@ void LobbyMessage::to_bin()
 
     tmp += sizeof(uint8_t);
 
-    memcpy(tmp, nick.c_str(), nick.size() + 1);
-
-    tmp += 8 * sizeof(char);
-
     memcpy(tmp, lobbyName.c_str(), lobbyName.size() + 1);
 }
 
@@ -85,11 +82,6 @@ int LobbyMessage::from_bin(char * bobj)
     memcpy(&type, tmp, sizeof(uint8_t));
 
     tmp += sizeof(uint8_t);
-
-    nick.resize(8 * sizeof(char));
-    memcpy((void*)nick.c_str(), tmp, 8 * sizeof(char));
-
-    tmp += 8 * sizeof(char);
 
     lobbyName.resize(80 * sizeof(char));
     memcpy((void *)lobbyName.c_str(), tmp, 80 * sizeof(char));
@@ -180,7 +172,45 @@ public:
                 if(soc==-1){
                     std::cerr << "Error en socket.recv()\n";
                 }
-                std::cout << "ASIEDUJDAWI\n";
+
+                switch (lm.type)
+                {
+                    case LobbyMessage::LOBBY_REQUEST:{
+                        // Logica para comprobar si se puede crear un lobby
+                        // con lm.lobbyName nombre y crearlo, de momento se acepta sin mas
+
+                        //Especificar primero el tipo de mensaje que se quiere tratar
+                        Message em("server","");
+                        em.type = Message::LOBBY;
+
+                        clientSocket_.send(em);
+
+                        //Enviar el mensaje del tipo correspondiente
+                        sleep(SYNC_DELAY);
+                        lm.type = LobbyMessage::LOBBY_ACCEPT;
+                        clientSocket_.send(lm);
+
+                        break;
+                    }
+                    case LobbyMessage::LOBBY_ASK_LIST:{
+                        // Logica para enviar la lista de lobbies disponibles
+                        // al cliente
+
+                        //Especificar primero el tipo de mensaje que se quiere tratar
+                        Message em("server","");
+                        em.type = Message::LOBBY;
+
+                        clientSocket_.send(em);
+
+                        //Enviar el mensaje del tipo correspondiente
+                        sleep(SYNC_DELAY);
+                        lm.type = LobbyMessage::LOBBY_SEND_LIST;
+                        clientSocket_.send(lm);
+                        break;
+                    }
+                    default:
+                        break;
+                }
 
                 break;
             }
@@ -258,7 +288,7 @@ void ChatClient::input_thread()
         std::string msg;
         std::getline(std::cin, msg);
 
-        if(msg=="!q"){
+        if(msg=="!q" || msg=="quit"){
             logout();
             break;
         }
@@ -275,9 +305,13 @@ void ChatClient::input_thread()
             socket.send(em);
 
             //Enviar el mensaje del tipo correspondiente
-            sleep(0.5);
-            LobbyMessage lm(nick,msg);
-            em.type = LobbyMessage::LOBBY_REQUEST;
+            sleep(SYNC_DELAY);
+            std::cout << "Introduce nombre de lobby: ";
+            std::string lobbyName;
+            std::getline(std::cin, lobbyName);
+
+            LobbyMessage lm(lobbyName);
+            lm.type = LobbyMessage::LOBBY_REQUEST;
             socket.send(lm);
         }
         else if(msg == "list"){
@@ -286,9 +320,9 @@ void ChatClient::input_thread()
 
             socket.send(em);
 
-            sleep(0.5);
-            LobbyMessage lm(nick,msg);
-            em.type = LobbyMessage::LOBBY_ASK_LIST;
+            sleep(SYNC_DELAY);
+            LobbyMessage lm(msg);
+            lm.type = LobbyMessage::LOBBY_ASK_LIST;
             socket.send(lm);
         }
 
@@ -325,7 +359,25 @@ void ChatClient::net_thread()
                     std::cerr << "Error en socket.recv()\n";
                 }
 
-                
+                switch (lm.type)
+                {
+                    case LobbyMessage::LOBBY_ACCEPT:{
+
+                        std::cout << "Lobby " << lm.lobbyName << " creado\nEsperando jugador...\n";
+                        break;
+                    }
+                    case LobbyMessage::LOBBY_DENY:{
+                        
+                        std::cout << "Lobby " << lm.lobbyName << " denegado por nombre\n";
+                        break;
+                    }
+                    case LobbyMessage::LOBBY_SEND_LIST:{
+                        std::cout << "Lista de lobbies: \n";
+                        break;
+                    }
+                    default:
+                        break;
+                }
 
                 break;
             }

@@ -69,7 +69,7 @@ public:
 
     LobbyMessage(){};
 
-    LobbyMessage(const std::string& n, const std::string& lobbyN/*, const std::vector<std::string> &lobbyL*/):nick(n),lobbyName(lobbyN)/*, lobbyList(lobbyL)*/{
+    LobbyMessage(const std::string& lobbyN/*, const std::vector<std::string> &lobbyL*/): lobbyName(lobbyN)/*, lobbyList(lobbyL)*/{
     };
 
     void to_bin();
@@ -78,7 +78,6 @@ public:
 
     uint8_t type;
 
-    std::string nick;
     std::string lobbyName;
     //std::vector<std::string> lobbyList;
 };
