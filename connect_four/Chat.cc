@@ -372,16 +372,61 @@ public:
                         } 
 
                         lobbiesMap->erase(mapElem); //Acaba la partida y los eliminamos del mapa.
-                        //active = false; //Se acaba el bucle principal
                         break;
                     }
 
                     default:
+						std::cout << "Tipo de mensaje no soportado. Esperaba uno de tipo LOBBY\n";
                         break;
                 }
-
                 break;
             }
+            
+            case Message::PLAY:{
+                PlayMessage pm;
+
+                int soc = clientSocket_->recv(pm);
+                if(soc==-1){
+                    std::cerr << "Error en socket.recv()\n";
+                }
+
+                switch (pm.type){
+                    case PlayMessage::PLAYER_PLAY:{
+                        auto mapElem = lobbiesMap->find(pm.lobbyName);
+                        std::pair<Socket*, Socket*>* sockPair = &mapElem->second;
+
+                        Message em("server","");
+                        em.type = Message::PLAY;
+                        sockPair->first->send(em);
+                        sockPair->second->send(em);
+                        sleep(SYNC_DELAY);
+
+						PlayMessage pmSend;
+						pmSend.type = PlayMessage::PLAYER_PLAY;
+						pmSend.posX = pm.posX;
+						pmSend.posY = pm.posY;
+
+                        if (sockPair->first == clientSocket_){
+                            pmSend.playerTurn = false;
+							sockPair->first->send(pmSend);
+							pmSend.playerTurn = true;
+							sockPair->second->send(pmSend);
+                        }
+						else{
+							pmSend.playerTurn = true;
+							sockPair->first->send(pmSend);
+							pmSend.playerTurn = false;
+							sockPair->second->send(pmSend);
+						}
+						break;
+                    }
+					default:
+						std::cout << "Tipo de mensaje no soportado. Esperaba uno de tipo PLAY. Esto es server.\n";
+					break;
+                } 
+				break;
+            }
+
             default:
                 std::cerr << "Tipo de mensaje no soportado.\n";
                 break;
@@ -397,10 +442,12 @@ void startGame(Socket* player1, Socket* player2){
 
     int random = rand() % 2;
     if (random == 0){
+		std::cout << "Empieza el host\n";
         firstPlayer = player1;
         secondPlayer = player2;
     }
     else{
+		std::cout << "Empieza el visitante\n";
         firstPlayer = player2;
         secondPlayer = player1;
     }
@@ -559,7 +606,33 @@ void ChatClient::input_thread()
             lm.type = LobbyMessage::LOBBY_QUIT;
             socket.send(lm);
         }
+        else if (msg == "play"){
+            if (game_->getTurn()){
+                Message em(nick, msg);
+                em.type = Message::PLAY;
 
+                socket.send(em);
+
+                sleep(SYNC_DELAY);
+                PlayMessage lp(lobbyName);
+                lp.type = PlayMessage::PLAYER_PLAY;
+                
+                int posX, posY;
+                std::cout << "PosX: ";
+                std::cin >> posX;
+                std::cout << "PosY: ";
+                std::cin >> posY;
+
+                lp.posX = posX;
+                lp.posY = posY;
+                lp.playerTurn = true;
+
+                socket.send(lp);
+            }
+            else{
+                std::cout << "No es tu turno. No puedes realizar una jugada\n";
+            }
+        }
         // ChatMessage em(nick,msg);
         // em.type = ChatMessage::MESSAGE;
 
@@ -641,9 +714,7 @@ void ChatClient::net_thread()
 
             case Message::PLAY:{
                 PlayMessage pm;
-
                 int soc = socket.recv(pm);
-                std::cout << "He recibido un mensaje PLAY\n";
                 if(soc==-1){
                     std::cerr << "Error en socket.recv()\n";
                 }
@@ -655,8 +726,16 @@ void ChatClient::net_thread()
                         else{
                             std::cout << "Partida empezada. Es el turno del oponente\n";
                         }
+                        game_->setTurn(pm.playerTurn);
                         break;
                     }
+					case PlayMessage::PLAYER_PLAY:{
+						std::cout << "New ficha just dropped on: " << pm.posX << " " << pm.posY << "\n";
+						game_->setTurn(pm.playerTurn);
+						if (pm.playerTurn) std::cout << "Es mi turno\n";
+						else std::cout << "El el turno del oponente\n";
+						break;
+					}
 
                     default:
                         std::cout << "Tipo de mensaje no soportado. Esperaba uno de tipo PLAY\n";
@@ -664,9 +743,10 @@ void ChatClient::net_thread()
                 }
                 break;
             }
+
             default:
                 std::cerr << "Tipo de mensaje no soportado.\n";
-                break;
+			break;
         }
     }
 }

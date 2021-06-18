@@ -111,7 +111,7 @@ public:
     enum MessageType
     {
         INITIAL_TURN = 0, //Turno inicial de la partida.
-        PLAY = 1 //Jugada de cada jugador
+        PLAYER_PLAY = 1 //Jugada de cada jugador
     };
 
     PlayMessage(){};

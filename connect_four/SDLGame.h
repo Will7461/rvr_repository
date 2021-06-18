@@ -21,6 +21,8 @@ public:
 
     void Run();
     void Quit();
+    bool getTurn() {return myTurn;}
+    void setTurn(bool t) {myTurn = t;}
 
 private:
     void initSDL();
@@ -35,6 +37,7 @@ private:
     int width_;
     int height_;
     bool exit;
+    bool myTurn = false;
 };
 
 class SDLObject{
