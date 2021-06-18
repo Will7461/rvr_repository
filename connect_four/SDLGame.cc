@@ -24,6 +24,10 @@ void SDLGame::Run(){
 	}
 }
 
+void SDLGame::Quit(){
+	exit = true;
+}
+
 void SDLGame::initSDL(){
     int sdlInit_ret = SDL_Init(SDL_INIT_EVERYTHING);
 
@@ -76,7 +80,7 @@ void SDLGame::handleEvents(){
 	{
 		if (event.type == SDL_QUIT)
 		{
-			exit = true;
+			Quit();
 		}
 	}
 }

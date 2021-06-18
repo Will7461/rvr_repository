@@ -1,6 +1,5 @@
 #include <thread>
 #include "Chat.h"
-#include "SDLGame.h"
 
 const int WIN_WIDTH = 300;
 const int WIN_HEIGTH = 300;
@@ -24,7 +23,7 @@ int main(int argc, char **argv)
             delete game;
         }).detach();
 
-    ChatClient ec(argv[1], argv[2], argv[3]);
+    ChatClient ec(argv[1], argv[2], argv[3], game);
 
     std::thread net_thread([&ec](){ ec.net_thread(); });
     net_thread.detach();

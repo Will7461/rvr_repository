@@ -360,9 +360,9 @@ void ChatClient::input_thread()
         // Leer stdin con std::getline
         std::string msg;
         std::getline(std::cin, msg);
-
         if(msg=="!q" || msg=="quit"){
             logout();
+            game_->Quit();
             break;
         }
         else if(msg.length()>80){

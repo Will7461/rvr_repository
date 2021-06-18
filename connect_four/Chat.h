@@ -9,6 +9,7 @@
 
 #include "Serializable.h"
 #include "Socket.h"
+#include "SDLGame.h"
 
 #define SYNC_DELAY 0.2
 #define MAX_LOBBIES 10
@@ -179,8 +180,8 @@ public:
      * @param p puerto del servidor
      * @param n nick del usuario
      */
-    ChatClient(const char * s, const char * p, const char * n):socket(s, p),
-        nick(n){
+    ChatClient(const char * s, const char * p, const char * n, SDLGame* g):socket(s, p),
+        nick(n), game_(g){
             socket.connect();
         };
 
@@ -222,5 +223,7 @@ private:
      * Lobby en la que está asignado el usuario
      */
     std::string lobbyName;
+
+    SDLGame* game_;
 };
 

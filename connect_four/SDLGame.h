@@ -10,6 +10,7 @@ public:
     ~SDLGame();
 
     void Run();
+    void Quit();
 
 private:
     void initSDL();
