@@ -109,6 +109,9 @@ void SDLGame::closeSDL(){
 
 	for (uint i = 0; i < NUM_TEXTURES; i++) delete textures[i];
 
+	matrix.clear();
+	objects.clear();
+
     SDL_DestroyRenderer(renderer_);
 	renderer_ = nullptr;
 

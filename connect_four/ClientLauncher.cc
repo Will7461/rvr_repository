@@ -1,5 +1,5 @@
 #include <thread>
-#include "Chat.h"
+#include "Client.h"
 
 int main(int argc, char **argv)
 {
@@ -19,7 +19,7 @@ int main(int argc, char **argv)
         delete game;
     }).detach();
 
-    ChatClient ec(argv[1], argv[2], argv[3], game);
+    Client ec(argv[1], argv[2], argv[3], game);
 
     std::thread net_thread([&ec](){ ec.net_thread(); });
     net_thread.detach();

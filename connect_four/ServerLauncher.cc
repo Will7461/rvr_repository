@@ -1,4 +1,4 @@
-#include "Chat.h"
+#include "Server.h"
 
 int main(int argc, char **argv)
 {
@@ -8,7 +8,7 @@ int main(int argc, char **argv)
     }
 
     srand(time(NULL)); //Usamos numeros aleatorios para decidir que jugador empieza la partida.
-    ChatServer es(argv[1], argv[2]);
+    Server es(argv[1], argv[2]);
 
     es.do_conexions();
 

@@ -1,7 +1,7 @@
 CC=g++
 CFLAGS=-g -I.
-DEPS = Socket.h Chat.h SDLGame.h Texture.h
-OBJ = Socket.o Chat.o SDLGame.o Texture.o
+DEPS = Socket.h Server.h Client.h Messages.h SDLGame.h Texture.h
+OBJ = Socket.o Server.o Client.o Messages.o SDLGame.o Texture.o
 LIBS=-lpthread -lSDL2 -lSDL2_ttf -lSDL2_image
 
 %.o: %.cc $(DEPS)
@@ -9,10 +9,10 @@ LIBS=-lpthread -lSDL2 -lSDL2_ttf -lSDL2_image
 
 all: cs cc
 
-cs: $(OBJ) ChatServer.o
+cs: $(OBJ) ServerLauncher.o
 	g++ -o $@ $^ $(CFLAGS) $(LIBS)
 
-cc: $(OBJ) ChatClient.o
+cc: $(OBJ) ClientLauncher.o
 	g++ -o $@ $^ $(CFLAGS) $(LIBS)
 
 
@@ -20,4 +20,3 @@ cc: $(OBJ) ChatClient.o
 
 clean:
 	rm -f *.o cs cc
-

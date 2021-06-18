@@ -1,15 +1,9 @@
 #include <string>
 #include <unistd.h>
 #include <string.h>
-#include <vector>
-#include <memory>
-#include <thread>
-#include <mutex>
-#include <map>
+
 
 #include "Serializable.h"
-#include "Socket.h"
-#include "SDLGame.h"
 
 #define SYNC_DELAY 0.2
 #define MAX_LOBBIES 10
@@ -128,107 +122,5 @@ public:
     bool playerTurn = false;
     int posX = 0;
     int posY = 0;
-};
-
-// -----------------------------------------------------------------------------
-// -----------------------------------------------------------------------------
-
-/**
- *  Clase para el servidor de chat
- */
-class ChatServer
-{
-public:
-    ChatServer(const char * s, const char * p): socket(s, p)
-    {
-        socket.bind();
-        socket.listen(16);
-    };
-
-    /**
-     *  Thread principal del servidor recibe mensajes en el socket y
-     *  lo distribuye a los clientes. Mantiene actualizada la lista de clientes
-     */
-    void do_conexions();
-
-private:
-    std::mutex clients_mtx;
-    /**
-     *  Lista de clientes conectados al servidor de Chat, representados por
-     *  su socket
-     */
-    std::vector<std::unique_ptr<Socket>> clients;
-
-    std::mutex lobbies_mtx;
-    /**
-     *  Map de lobbies<Lobby Name,Lobby Full>
-     */
-    std::map<std::string, std::pair<Socket*,Socket*>> lobbies;
-
-    /**
-     * Socket del servidor
-     */
-    Socket socket;
-};
-
-// -----------------------------------------------------------------------------
-// -----------------------------------------------------------------------------
-
-/**
- *  Clase para el cliente de chat
- */
-class ChatClient
-{
-public:
-    /**
-     * @param s dirección del servidor
-     * @param p puerto del servidor
-     * @param n nick del usuario
-     */
-    ChatClient(const char * s, const char * p, const char * n, SDLGame* g):socket(s, p),
-        nick(n), game_(g){
-            socket.connect();
-        };
-
-    /**
-     *  Envía el mensaje de login al servidor
-     */
-    void login();
-
-    /**
-     *  Envía el mensaje de logout al servidor
-     */
-    void logout();
-
-    /**
-     *  Rutina principal para el Thread de E/S. Lee datos de STDIN (std::getline)
-     *  y los envía por red vía el Socket.
-     */
-    void input_thread();
-
-    /**
-     *  Rutina del thread de Red. Recibe datos de la red y los "renderiza"
-     *  en STDOUT
-     */
-    void net_thread();
-
-private:
-
-    /**
-     * Socket para comunicar con el servidor
-     */
-    Socket socket;
-
-    /**
-     * Nick del usuario
-     */
-    std::string nick;
-
-    /**
-     * Lobby en la que está asignado el usuario
-     */
-    std::string lobbyName;
-
-    SDLGame* game_;
 };
 
