@@ -7,6 +7,7 @@ int main(int argc, char **argv)
         return -1;
     }
 
+    srand(time(NULL)); //Usamos numeros aleatorios para decidir que jugador empieza la partida.
     ChatServer es(argv[1], argv[2]);
 
     es.do_conexions();

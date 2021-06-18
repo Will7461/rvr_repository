@@ -41,7 +41,8 @@ public:
         LOGIN   = 0,
         MESSAGE = 1,
         LOGOUT  = 2,
-        LOBBY = 3
+        LOBBY = 3,
+        PLAY = 4
     };
 
     Message(){};
@@ -105,17 +106,17 @@ public:
 class PlayMessage: public Serializable
 {
 public:
-    static const size_t MESSAGE_SIZE = sizeof(char) * 88 + sizeof(uint8_t);
+    static const size_t MESSAGE_SIZE = sizeof(uint8_t) + sizeof(std::string) + sizeof(bool) + sizeof(int) * 2;
 
     enum MessageType
     {
-        INITIAL_TURN = 0,
-        PLAY = 1
+        INITIAL_TURN = 0, //Turno inicial de la partida.
+        PLAY = 1 //Jugada de cada jugador
     };
 
     PlayMessage(){};
 
-    PlayMessage(const std::string& n, const std::string& m):nick(n),message(m){};
+    PlayMessage(const std::string&l): lobbyName(l){};
 
     void to_bin();
 
@@ -123,8 +124,10 @@ public:
 
     uint8_t type;
 
-    std::string nick;
-    std::string message;
+    std::string lobbyName;
+    bool playerTurn = false;
+    int posX = 0;
+    int posY = 0;
 };
 
 // -----------------------------------------------------------------------------
