@@ -107,7 +107,7 @@ class MessageThread
 {
 public:
     MessageThread(int sd, struct sockaddr client, socklen_t clientlen, std::mutex* clients_mtx, std::vector<std::unique_ptr<Socket>>* _clientsVector,
-    std::mutex* lobbies_mtx, std::map<std::string, bool>* _lobbiesMap) : 
+    std::mutex* lobbies_mtx, std::map<std::string, ClientsRegistry>* _lobbiesMap) : 
     c_mtx(clients_mtx), clientsVector(_clientsVector), l_mtx(lobbies_mtx), lobbiesMap(_lobbiesMap) {
 
         clientSocket_ = new Socket(sd, &client, clientlen);
@@ -213,7 +213,10 @@ public:
                             clientSocket_->send(lm);
                         }
                         else{
-                            lobbiesMap->insert({lm.lobbyName, false});
+                            ClientsRegistry reg = ClientsRegistry();
+                            std::unique_ptr<Socket> newPlayer(clientSocket_);
+                            reg.add(newPlayer);
+                            lobbiesMap->insert({lm.lobbyName, ClientsRegistry()});
                             lm.type = LobbyMessage::LOBBY_ACCEPT;
                             clientSocket_->send(lm);
                         }
@@ -292,7 +295,7 @@ std::mutex* c_mtx;
 std::vector<std::unique_ptr<Socket>>* clientsVector;
 
 std::mutex* l_mtx;
-std::map<std::string, bool>* lobbiesMap;
+std::map<std::string, ClientsRegistry>* lobbiesMap;
 
 };
 

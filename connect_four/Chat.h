@@ -13,6 +13,38 @@
 #define SYNC_DELAY 0.2
 #define MAX_LOBBIES 10
 
+struct ClientsRegistry{
+
+    //HOLA QUE ES UN SOCKET Y QUE SON LOS PUNTEROS
+
+    Socket *clientA;
+    Socket *clientB;
+    bool clientAJoined = false;
+    bool clientBJoined = false;
+
+    ClientsRegistry(){}
+    void add(Socket *newClient){
+        if (!clientAJoined) { clientA = newClient; clientAJoined = true;}
+        else if (!clientBJoined) {clientB = newClient; clientBJoined = true;}
+    }
+
+    void clear(){
+        clientA = nullptr;
+        clientB = nullptr;
+        bool clientAJoined = false;
+        bool clientBJoined = false;
+    }
+
+    void remove(Socket *exitClient){
+        if (exitClient == clientA) { clientA = nullptr; clientAJoined = false;}
+        else if (exitClient == clientB) { clientB = nullptr; clientBJoined = false;}
+    }
+
+    bool isLobbyFull(){
+        return (clientAJoined && clientBJoined);
+    }
+};
+
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 
