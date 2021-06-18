@@ -260,19 +260,47 @@ public:
                         //Enviar el mensaje del tipo correspondiente
                         sleep(SYNC_DELAY);
                         l_mtx->lock();
+                        auto lobbyIt = lobbiesMap->find(lm.lobbyName);
+                        std::pair<Socket*, Socket*>* lobbyPair = &lobbyIt->second;
                         if(lobbiesMap->count(lm.lobbyName) == 0 ||
-                        lobbiesMap->count(lm.lobbyName)>0 && lobbiesMap->at(lm.lobbyName).second != nullptr){
+                        lobbiesMap->count(lm.lobbyName)>0 && lobbyPair->second != nullptr){
                             lm.type = LobbyMessage::LOBBY_JOIN_DENY;
                             clientSocket_->send(lm);
                         }
                         else{
                             //Añadir el otro socket al mapa.
-                            lobbiesMap->at(lm.lobbyName).second = clientSocket_;
+                            lobbyPair->second = clientSocket_;
                             lm.type = LobbyMessage::LOBBY_JOIN_ACCEPT;
                             clientSocket_->send(lm);
+
+                            lobbyPair->first->send(em);
+                            sleep(SYNC_DELAY);
+                            lobbyPair->first->send(lm);
                         }
                         l_mtx->unlock();
 
+                        break;
+                    }
+                    case LobbyMessage::LOBBY_QUIT:{
+                        auto mapElem = lobbiesMap->find(lm.lobbyName); //Encontramos al oponente
+                        std::pair<Socket*, Socket*>* sockPair = &mapElem->second;
+                        Socket* opponentSocket = nullptr;
+                        if (sockPair->first == clientSocket_) {
+                            opponentSocket = sockPair->second;
+                        }
+                        else opponentSocket = sockPair->first;
+
+                        Message em("server","");
+                        em.type = Message::LOBBY;
+
+                        opponentSocket->send(em);
+                        sleep(SYNC_DELAY);
+
+                        lm.type = LobbyMessage::LOBBY_QUIT_REPLY; 
+                        opponentSocket->send(lm); 
+
+                        lobbiesMap->erase(mapElem); //Acaba la partida y los eliminamos del mapa.
+                        //active = false; //Se acaba el bucle principal
                         break;
                     }
 
@@ -414,6 +442,20 @@ void ChatClient::input_thread()
             lm.type = LobbyMessage::LOBBY_JOIN_REQUEST;
             socket.send(lm);
         }
+        else if(msg == "abandon"){
+            std::cout << "Abandonando la partida...\n";
+
+            Message em(nick, msg);
+            em.type = Message::LOBBY;
+
+            socket.send(em);
+
+            //Enviar el mensaje del tipo correspondiente
+            sleep(SYNC_DELAY);
+            LobbyMessage lm(lobbyName);
+            lm.type = LobbyMessage::LOBBY_QUIT;
+            socket.send(lm);
+        }
 
         // ChatMessage em(nick,msg);
         // em.type = ChatMessage::MESSAGE;
@@ -473,14 +515,17 @@ void ChatClient::net_thread()
                         break;
                     }
                     case LobbyMessage::LOBBY_JOIN_ACCEPT:{
-                        std::cout << "Unido al lobby " << lm.lobbyName << ". Empieza la partida!\n";
+                        std::cout << "Empieza la partida en el lobby " << lm.lobbyName << "!\n";
                         lobbyName = lm.lobbyName;
-                        //Habrá que guardar la lobby aquí supongo
                         break;
                     }
                     case LobbyMessage::LOBBY_JOIN_DENY:{
                         std::cout << "Lobby " << lm.lobbyName << " denegado por nombre incorrecto o porque no existe.\n";
                         //Habrá que guardar la lobby aquí supongo
+                        break;
+                    }
+                    case LobbyMessage::LOBBY_QUIT_REPLY:{
+                        std::cout << "Tu oponente " << lm.lobbyName << " ha abandonado la partida. Volviendo al menu principal.\n";
                         break;
                     }
                     default:

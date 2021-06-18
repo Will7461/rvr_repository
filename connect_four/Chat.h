@@ -73,7 +73,9 @@ public:
         LOBBY_JOIN_REQUEST = 5, //El cliente pide unirse a una lobby
         LOBBY_JOIN_ACCEPT = 6, //Respuesta positiva del servidor a la petición de unirse a un lobby
         LOBBY_JOIN_DENY = 7, //Respuesta negativa del servidor a la petición de unirse a un lobby
-        LOBBY_START = 8
+        LOBBY_START = 8, //Mensaje de empezar la partida
+        LOBBY_QUIT = 9, //Uno de los jugadores abandona el lobby
+        LOBBY_QUIT_REPLY = 10 //El servidor informa al otro jugador que su oponente se ha abandonado
     };
 
     LobbyMessage(){
