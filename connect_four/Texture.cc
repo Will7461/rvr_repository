@@ -29,8 +29,5 @@ void Texture::load(string filename) {
 }
 
 void Texture::render(const SDL_Rect& destRect, SDL_RendererFlip flip) const {
-	SDL_Rect srcRect;
-	srcRect.x = 0; srcRect.y = 0;
-	srcRect.w = w; srcRect.h = h;
-	SDL_RenderCopyEx(renderer, texture, &srcRect, &destRect, 0, 0, flip);
+	SDL_RenderCopyEx(renderer, texture, NULL, &destRect, 0, 0, flip);
 }

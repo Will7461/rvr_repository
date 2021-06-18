@@ -1,9 +1,6 @@
 #include <thread>
 #include "Chat.h"
 
-const int WIN_WIDTH = 300;
-const int WIN_HEIGTH = 300;
-
 int main(int argc, char **argv)
 {
     if(argc != 4){
@@ -15,8 +12,7 @@ int main(int argc, char **argv)
         return -1;
     }
     std::string name  = "Connect4 Client: " + std::string(argv[3]);
-    SDLGame* game = new SDLGame(name, 1080, 720);
-
+    SDLGame* game = new SDLGame(name, WINDOW_W, WINDOW_H);
     std::thread([&game](){
         game->Run();
 
