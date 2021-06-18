@@ -260,7 +260,8 @@ public:
                         //Enviar el mensaje del tipo correspondiente
                         sleep(SYNC_DELAY);
                         l_mtx->lock();
-                        if(lobbiesMap->count(lm.lobbyName) == 0){
+                        if(lobbiesMap->count(lm.lobbyName) == 0 ||
+                        lobbiesMap->count(lm.lobbyName)>0 && lobbiesMap->at(lm.lobbyName)){
                             lm.type = LobbyMessage::LOBBY_JOIN_DENY;
                             clientSocket_->send(lm);
                         }

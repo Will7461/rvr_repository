@@ -1,6 +1,6 @@
 #include <thread>
 #include "Chat.h"
-#include "SDLGame.cc"
+#include "SDLGame.h"
 
 const int WIN_WIDTH = 300;
 const int WIN_HEIGTH = 300;
