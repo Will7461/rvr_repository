@@ -16,7 +16,13 @@ int main(int argc, char **argv)
         return -1;
     }
     std::string name  = "Connect4 Client: " + std::string(argv[3]);
-    SDLGame* game = new SDLGame(name, 1000, 1000);
+    SDLGame* game = new SDLGame(name, 1080, 720);
+
+    std::thread([&game](){
+            game->Run();
+
+            delete game;
+        }).detach();
 
     ChatClient ec(argv[1], argv[2], argv[3]);
 
