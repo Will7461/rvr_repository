@@ -71,7 +71,8 @@ public:
         LOBBY_SEND_LIST = 4, //El server responde con la lista de servidores
         LOBBY_JOIN_REQUEST = 5, //El cliente pide unirse a una lobby
         LOBBY_JOIN_ACCEPT = 6, //Respuesta positiva del servidor a la petición de unirse a un lobby
-        LOBBY_JOIN_DENY = 7 //Respuesta negativa del servidor a la petición de unirse a un lobby
+        LOBBY_JOIN_DENY = 7, //Respuesta negativa del servidor a la petición de unirse a un lobby
+        LOBBY_START = 8
     };
 
     LobbyMessage(){
@@ -156,7 +157,7 @@ private:
     /**
      *  Map de lobbies<Lobby Name,Lobby Full>
      */
-    std::map<std::string, bool> lobbies;
+    std::map<std::string, std::pair<Socket*,Socket*>> lobbies;
 
     /**
      * Socket del servidor

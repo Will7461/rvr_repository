@@ -107,7 +107,7 @@ class MessageThread
 {
 public:
     MessageThread(int sd, struct sockaddr client, socklen_t clientlen, std::mutex* clients_mtx, std::vector<std::unique_ptr<Socket>>* _clientsVector,
-    std::mutex* lobbies_mtx, std::map<std::string, bool>* _lobbiesMap) : 
+    std::mutex* lobbies_mtx, std::map<std::string, std::pair<Socket*,Socket*>>* _lobbiesMap) : 
     c_mtx(clients_mtx), clientsVector(_clientsVector), l_mtx(lobbies_mtx), lobbiesMap(_lobbiesMap) {
 
         clientSocket_ = new Socket(sd, &client, clientlen);
@@ -213,7 +213,7 @@ public:
                             clientSocket_->send(lm);
                         }
                         else{
-                            lobbiesMap->insert({lm.lobbyName, false});
+                            lobbiesMap->insert({lm.lobbyName, std::make_pair(clientSocket_,nullptr)});
                             lm.type = LobbyMessage::LOBBY_ACCEPT;
                             clientSocket_->send(lm);
                         }
@@ -240,7 +240,7 @@ public:
                         l_mtx->lock();
                         for (auto const& lobby : *lobbiesMap)
                         {
-                            if(lobby.second == false){
+                            if(lobby.second.second == nullptr){
                                 lm.lobbyList[i] = lobby.first;
                                 i++;
                             }
@@ -261,12 +261,13 @@ public:
                         sleep(SYNC_DELAY);
                         l_mtx->lock();
                         if(lobbiesMap->count(lm.lobbyName) == 0 ||
-                        lobbiesMap->count(lm.lobbyName)>0 && lobbiesMap->at(lm.lobbyName)){
+                        lobbiesMap->count(lm.lobbyName)>0 && lobbiesMap->at(lm.lobbyName).second != nullptr){
                             lm.type = LobbyMessage::LOBBY_JOIN_DENY;
                             clientSocket_->send(lm);
                         }
                         else{
                             //Añadir el otro socket al mapa.
+                            lobbiesMap->at(lm.lobbyName).second = clientSocket_;
                             lm.type = LobbyMessage::LOBBY_JOIN_ACCEPT;
                             clientSocket_->send(lm);
                         }
@@ -274,6 +275,7 @@ public:
 
                         break;
                     }
+
                     default:
                         break;
                 }
@@ -293,7 +295,7 @@ std::mutex* c_mtx;
 std::vector<std::unique_ptr<Socket>>* clientsVector;
 
 std::mutex* l_mtx;
-std::map<std::string, bool>* lobbiesMap;
+std::map<std::string, std::pair<Socket*,Socket*>>* lobbiesMap;
 
 };
 
