@@ -251,6 +251,28 @@ public:
                         
                         break;
                     }
+                    case LobbyMessage::LOBBY_JOIN_REQUEST:{
+                        Message em("server","");
+                        em.type = Message::LOBBY;
+
+                        clientSocket_->send(em);
+
+                        //Enviar el mensaje del tipo correspondiente
+                        sleep(SYNC_DELAY);
+                        l_mtx->lock();
+                        if(lobbiesMap->count(lm.lobbyName) == 0){
+                            lm.type = LobbyMessage::LOBBY_JOIN_DENY;
+                            clientSocket_->send(lm);
+                        }
+                        else{
+                            //Añadir el otro socket al mapa.
+                            lm.type = LobbyMessage::LOBBY_JOIN_ACCEPT;
+                            clientSocket_->send(lm);
+                        }
+                        l_mtx->unlock();
+
+                        break;
+                    }
                     default:
                         break;
                 }
@@ -373,6 +395,22 @@ void ChatClient::input_thread()
             lm.type = LobbyMessage::LOBBY_ASK_LIST;
             socket.send(lm);
         }
+        else if(msg == "join"){
+            Message em(nick, msg);
+            em.type = Message::LOBBY;
+
+            socket.send(em);
+
+            //Enviar el mensaje del tipo correspondiente
+            sleep(SYNC_DELAY);
+            std::cout << "Introduce nombre de lobby al que quieres unirte: ";
+            std::string lobbyName;
+            std::getline(std::cin, lobbyName);
+
+            LobbyMessage lm(lobbyName);
+            lm.type = LobbyMessage::LOBBY_JOIN_REQUEST;
+            socket.send(lm);
+        }
 
         // ChatMessage em(nick,msg);
         // em.type = ChatMessage::MESSAGE;
@@ -416,6 +454,7 @@ void ChatClient::net_thread()
                     case LobbyMessage::LOBBY_ACCEPT:{
 
                         std::cout << "Lobby " << lm.lobbyName << " creado\nEsperando jugador...\n";
+                        lobbyName = lm.lobbyName;
                         break;
                     }
                     case LobbyMessage::LOBBY_DENY:{
@@ -428,6 +467,17 @@ void ChatClient::net_thread()
                         for(std::string lobbyName : lm.lobbyList){
                             if(lobbyName.find("none") == std::string::npos) std::cout << lobbyName << '\n';
                         }
+                        break;
+                    }
+                    case LobbyMessage::LOBBY_JOIN_ACCEPT:{
+                        std::cout << "Unido al lobby " << lm.lobbyName << ". Empieza la partida!\n";
+                        lobbyName = lm.lobbyName;
+                        //Habrá que guardar la lobby aquí supongo
+                        break;
+                    }
+                    case LobbyMessage::LOBBY_JOIN_DENY:{
+                        std::cout << "Lobby " << lm.lobbyName << " denegado por nombre incorrecto o porque no existe.\n";
+                        //Habrá que guardar la lobby aquí supongo
                         break;
                     }
                     default:

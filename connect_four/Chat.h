@@ -64,11 +64,14 @@ public:
     
     enum MessageType
     {
-        LOBBY_REQUEST = 0,
-        LOBBY_ACCEPT  = 1,
-        LOBBY_DENY = 2,
-        LOBBY_ASK_LIST = 3,
-        LOBBY_SEND_LIST = 4
+        LOBBY_REQUEST = 0, //Pide crear una lobby
+        LOBBY_ACCEPT  = 1, //Respuesta positiva al intentar crear una lobby
+        LOBBY_DENY = 2, //Respuesta negativa al intentar crear una lobby
+        LOBBY_ASK_LIST = 3, //El cliente le pide al servidor la lista de servers
+        LOBBY_SEND_LIST = 4, //El server responde con la lista de servidores
+        LOBBY_JOIN_REQUEST = 5, //El cliente pide unirse a una lobby
+        LOBBY_JOIN_ACCEPT = 6, //Respuesta positiva del servidor a la petición de unirse a un lobby
+        LOBBY_JOIN_DENY = 7 //Respuesta negativa del servidor a la petición de unirse a un lobby
     };
 
     LobbyMessage(){
@@ -213,5 +216,10 @@ private:
      * Nick del usuario
      */
     std::string nick;
+
+    /**
+     * Lobby en la que está asignado el usuario
+     */
+    std::string lobbyName;
 };
 
