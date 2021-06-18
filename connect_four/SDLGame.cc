@@ -84,3 +84,16 @@ void SDLGame::handleEvents(){
 		}
 	}
 }
+
+void SDLObject::render() const{
+	texture->render(getDestRect());
+}
+
+SDL_Rect SDLObject::getDestRect() const{
+	SDL_Rect destRect;
+	destRect.x = int(pos_.x);
+	destRect.y = int(pos_.y);
+	destRect.w = w_;
+	destRect.h = h_;
+	return destRect;
+}

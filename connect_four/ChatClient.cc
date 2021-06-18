@@ -18,10 +18,10 @@ int main(int argc, char **argv)
     SDLGame* game = new SDLGame(name, 1080, 720);
 
     std::thread([&game](){
-            game->Run();
+        game->Run();
 
-            delete game;
-        }).detach();
+        delete game;
+    }).detach();
 
     ChatClient ec(argv[1], argv[2], argv[3], game);
 
