@@ -218,8 +218,62 @@ void SDLGame::doPlay(){
 		freeSlot = matrix[i][currentArrowPos].second;
 		i--;
 	}while (i>=0 && freeSlot != Color::EMPTY);
-	
-	client->sendPlay(i+1, currentArrowPos);
+	printState();
+	bool winningPlay = checkPlayerWon(i+1, currentArrowPos);
+	if (winningPlay) std::cout << "YOU JUST WON YOU WONDERFUL HUMAN BEING\n";
+	client->sendPlay(i+1, currentArrowPos, winningPlay);
+}
+
+bool SDLGame::checkPlayerWon(int x, int y){
+	//Horizontal
+	int numRight = numCheckersInDir(x, y, 0, 1);
+	int numLeft = numCheckersInDir(x, y, 0, -1);
+
+	if (numRight + numLeft + 1 >= 4) return true; 
+
+	//Vertical
+	int numUp = numCheckersInDir(x, y, 1, 0);
+	int numDown = numCheckersInDir(x, y, -1, 0);
+
+	if (numUp + numDown + 1 >= 4) return true;
+
+	//Diagonal ascendiente
+	int numUpRight = numCheckersInDir(x, y, 1, 1);
+	int numDownLeft = numCheckersInDir(x, y, -1, -1);
+
+	if (numUpRight + numDownLeft + 1 >= 4) return true;
+
+	//Diagonal descendiente
+	int numDownRight = numCheckersInDir(x, y, -1, 1);
+	int numUpLeft = numCheckersInDir(x, y, 1, -1);
+
+	if (numDownRight + numUpLeft + 1 >= 4) return true;
+
+	return false;
+}
+
+void SDLGame::printState(){
+	std::cout << "Estado actual de la partida:\n";
+	for (int k = 0; k < MATRIX_R; k++){
+		for (int l = 0; l < MATRIX_C; l++){
+			if (matrix[k][l].second == Color::EMPTY) std::cout << "0 ";
+			else if (matrix[k][l].second == Color::RED) std::cout << "R ";
+			else std::cout << "Y ";
+		}
+		std::cout << "\n";
+	}
+}
+
+int SDLGame::numCheckersInDir(int posX, int posY, int dirX, int dirY){
+	int newPosX = posX + dirX;
+	int newPosY = posY + dirY;
+	if (isViable(newPosX, newPosY) && matrix[newPosX][newPosY].second == myColor) 
+		return 1 + numCheckersInDir(newPosX, newPosY, dirX, dirY);
+	else return 0;
+}
+
+bool SDLGame::isViable (int posX, int posY){
+	return (posX > 0 && posX < MATRIX_R && posY > 0 && posY < MATRIX_C);
 }
 
 void SDLObject::render() const{

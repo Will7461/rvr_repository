@@ -194,7 +194,7 @@ void Client::net_thread()
     }
 }
 
-void Client::sendPlay(int x, int y){
+void Client::sendPlay(int x, int y, bool winningPlay){
 
     Message em(nick, "play", lobbyName);
     em.type = Message::PLAYER_PLAY;

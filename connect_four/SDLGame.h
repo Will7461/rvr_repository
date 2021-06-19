@@ -74,6 +74,10 @@ private:
     void resetTable();
     void moveArrow(int d);
     void doPlay();
+    bool checkPlayerWon(int x, int y);
+    int numCheckersInDir(int posX, int posY, int dirX, int dirY);
+    bool isViable (int posX, int posY);
+    void printState();
 
     Client* client;
 

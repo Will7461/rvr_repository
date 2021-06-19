@@ -43,7 +43,7 @@ public:
      */
     void net_thread();
 
-    void sendPlay(int x, int y);
+    void sendPlay(int x, int y, bool winningPlay = false);
 
 private:
 
