@@ -93,6 +93,8 @@ private:
     vector<SDLObject> objects;
     SDLObject* table;
     SDLObject* arrow;
+    SDLObject* turnMarker_Player;
+    SDLObject* turnMarker_Opponent;
     SDLObject* endGameText;
     SDLObject* titleScreen;
     Color myColor;

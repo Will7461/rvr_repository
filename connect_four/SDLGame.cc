@@ -130,6 +130,8 @@ void SDLGame::initMatrix(){
 	}
 
 	arrow = new SDLObject(Vector2D(matrix[0][0].first.x + arrowLeftOffset, matrix[0][0].first.y - arrowUpOffset), arrow_size, arrow_size, textures[TextureName::TEX_ARROW]);
+	turnMarker_Player = new SDLObject(Vector2D(width_ * 0.02, height_ * 0.1), textures[TextureName::TEX_MARKER_PLAYER]->getW(), textures[TextureName::TEX_MARKER_PLAYER]->getH(), textures[TextureName::TEX_MARKER_PLAYER]);
+	turnMarker_Opponent = new SDLObject(Vector2D(width_ * 0.02, height_ * 0.1), textures[TextureName::TEX_MARKER_OPPONENT]->getW(), textures[TextureName::TEX_MARKER_OPPONENT]->getH(), textures[TextureName::TEX_MARKER_OPPONENT]);
 }
 
 void SDLGame::loadTextures(){
@@ -139,6 +141,8 @@ void SDLGame::loadTextures(){
 void SDLGame::closeSDL(){
 	delete table;
 	delete arrow;
+	delete turnMarker_Player;
+	delete turnMarker_Opponent;
 	if (endGameText) delete endGameText;
 
 	for (uint i = 0; i < NUM_TEXTURES; i++) delete textures[i];
@@ -167,6 +171,8 @@ void SDLGame::render() const{
 	else{
 		table->render();
 		arrow->render();
+		if (myTurn) turnMarker_Player->render();
+		else turnMarker_Opponent->render();
 		if (endGameText && gameEnded) endGameText->render();
 	}
 
