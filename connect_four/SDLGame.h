@@ -104,5 +104,5 @@ private:
     bool myTurn;
     bool resetTableReq;
     bool playing;
-    bool gameEnded = false;
+    bool gameEnded;
 };

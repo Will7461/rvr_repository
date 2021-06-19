@@ -10,7 +10,8 @@ SDLGame::SDLGame(string winTitle, int w, int h) : matrix(MATRIX_R, vector<std::p
 	myTurn = false;
     resetTableReq = false;
     playing = false;
-
+	gameEnded = false;
+	
     initSDL();
 
 	initMatrix();
@@ -77,6 +78,7 @@ void SDLGame::setClient(Client* c){
 void SDLGame::gameFinished(bool won){
 	int texW = textures[TextureName::TEX_WIN]->getW();
 	int texH = textures[TextureName::TEX_WIN]->getH();
+	if (endGameText) delete endGameText;
 	gameEnded = true;
 	if (won) {
 		endGameText = new SDLObject(Vector2D(WINDOW_W/2 - texW / 2, WINDOW_H / 2 - texH / 2), texW, texH, textures[TextureName::TEX_WIN]);
@@ -136,7 +138,7 @@ void SDLGame::loadTextures(){
 void SDLGame::closeSDL(){
 	delete table;
 	delete arrow;
-	delete endGameText;
+	if (endGameText) delete endGameText;
 
 	for (uint i = 0; i < NUM_TEXTURES; i++) delete textures[i];
 
@@ -163,7 +165,7 @@ void SDLGame::render() const{
 
 	table->render();
 	arrow->render();
-	if (endGameText) endGameText->render();
+	if (endGameText && gameEnded) endGameText->render();
 	
 	SDL_RenderPresent(renderer_);
 }
@@ -179,8 +181,8 @@ void SDLGame::handleEvents(){
 		else if(event.type == SDL_KEYDOWN){
 			switch (event.key.keysym.sym) {
 				case SDLK_SPACE:
-					if (gameEnded) Quit();
-					if(myTurn) doPlay();
+					if (gameEnded) resetTable();
+					else if(myTurn) doPlay();
 					break;
 				case SDLK_LEFT:
 					moveArrow(-1);
@@ -205,10 +207,11 @@ void SDLGame::resetTable(){
 			*state = Color::EMPTY; 
 		}
 	}
-	
+	resetTableReq = false;
+	gameEnded = false;
+
 	objects.clear();
 	render();
-	resetTableReq = false;
 }
 
 void SDLGame::moveArrow(int d){
