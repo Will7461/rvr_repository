@@ -75,8 +75,15 @@ void SDLGame::setClient(Client* c){
 }
 
 void SDLGame::gameFinished(bool won){
-	if (won) std::cout << "You won the game!\n";
-	else std::cout << "You lost the game!\n";
+	int texW = textures[TextureName::TEX_WIN]->getW();
+	int texH = textures[TextureName::TEX_WIN]->getH();
+	gameEnded = true;
+	if (won) {
+		endGameText = new SDLObject(Vector2D(WINDOW_W/2 - texW / 2, WINDOW_H / 2 - texH / 2), texW, texH, textures[TextureName::TEX_WIN]);
+	}
+	else {
+		endGameText = new SDLObject(Vector2D(WINDOW_W/2 - texW / 2, WINDOW_H / 2 - texH / 2), texW, texH, textures[TextureName::TEX_LOSE]);
+	}
 }
 
 void SDLGame::initSDL(){
@@ -129,6 +136,7 @@ void SDLGame::loadTextures(){
 void SDLGame::closeSDL(){
 	delete table;
 	delete arrow;
+	delete endGameText;
 
 	for (uint i = 0; i < NUM_TEXTURES; i++) delete textures[i];
 
@@ -155,6 +163,7 @@ void SDLGame::render() const{
 
 	table->render();
 	arrow->render();
+	if (endGameText) endGameText->render();
 	
 	SDL_RenderPresent(renderer_);
 }
@@ -170,6 +179,7 @@ void SDLGame::handleEvents(){
 		else if(event.type == SDL_KEYDOWN){
 			switch (event.key.keysym.sym) {
 				case SDLK_SPACE:
+					if (gameEnded) Quit();
 					if(myTurn) doPlay();
 					break;
 				case SDLK_LEFT:
@@ -223,7 +233,7 @@ void SDLGame::doPlay(){
 		freeSlot = matrix[i][currentArrowPos].second;
 		i--;
 	}while (i>=0 && freeSlot != Color::EMPTY);
-	printState();
+	//printState();
 	bool winningPlay = checkPlayerWon(i+1, currentArrowPos);
 	client->sendPlay(i+1, currentArrowPos, winningPlay);
 }

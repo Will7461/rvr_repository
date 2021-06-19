@@ -11,10 +11,10 @@
 
 using namespace std;
 
-const uint NUM_TEXTURES = 4;
-const string texturesName[NUM_TEXTURES] = {"images/arrow.png", "images/red.png", "images/yellow.png", "images/table.png" };
+const uint NUM_TEXTURES = 6;
+const string texturesName[NUM_TEXTURES] = {"images/arrow.png", "images/red.png", "images/yellow.png", "images/table.png", "images/WinText.png", "images/LostText.png" };
 enum TextureName{
-    TEX_ARROW, TEX_RED, TEX_YELLOW, TEX_TABLE
+    TEX_ARROW, TEX_RED, TEX_YELLOW, TEX_TABLE, TEX_WIN, TEX_LOSE
 };
 
 enum Color{
@@ -91,6 +91,7 @@ private:
     vector<SDLObject> objects;
     SDLObject* table;
     SDLObject* arrow;
+    SDLObject* endGameText;
     Color myColor;
 
     string windowTitle_;
@@ -103,4 +104,5 @@ private:
     bool myTurn;
     bool resetTableReq;
     bool playing;
+    bool gameEnded = false;
 };
