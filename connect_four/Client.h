@@ -1,17 +1,16 @@
+#pragma once
 #include <string>
 #include <unistd.h>
 #include <thread>
 #include <mutex>
 
 #include "Socket.h"
-#include "SDLGame.h"
 #include "Messages.h"
-
-#define SYNC_DELAY 0.2
 
 /**
  *  Clase para el cliente
  */
+class SDLGame;
 class Client
 {
 public:
@@ -20,10 +19,7 @@ public:
      * @param p puerto del servidor
      * @param n nick del usuario
      */
-    Client(const char * s, const char * p, const char * n, SDLGame* g):socket(s, p),
-        nick(n), game_(g){
-            socket.connect();
-        };
+    Client(const char * s, const char * p, const char * n, SDLGame* g);
 
     /**
      *  Envía el mensaje de login al servidor
@@ -46,6 +42,8 @@ public:
      *  en STDOUT
      */
     void net_thread();
+
+    void sendPlay(int x, int y);
 
 private:
 

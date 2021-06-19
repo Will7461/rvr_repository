@@ -1,6 +1,13 @@
 #include "Client.h"
+#include "SDLGame.h"
 #include <time.h>
 #include <stdlib.h>
+
+Client::Client(const char * s, const char * p, const char * n, SDLGame* g) : socket(s, p),
+        nick(n), game_(g){
+    socket.connect();
+    game_->setClient(this);
+}
 
 void Client::login()
 {
@@ -50,10 +57,10 @@ void Client::input_thread()
             //Enviar el mensaje del tipo correspondiente
             sleep(SYNC_DELAY);
             std::cout << "Introduce nombre de lobby: ";
-            std::string lobbyName;
-            std::getline(std::cin, lobbyName);
+            std::string lName;
+            std::getline(std::cin, lName);
 
-            LobbyMessage lm(lobbyName);
+            LobbyMessage lm(lName);
             lm.type = LobbyMessage::LOBBY_REQUEST;
             socket.send(lm);
         }
@@ -77,10 +84,10 @@ void Client::input_thread()
             //Enviar el mensaje del tipo correspondiente
             sleep(SYNC_DELAY);
             std::cout << "Introduce nombre de lobby al que quieres unirte: ";
-            std::string lobbyName;
-            std::getline(std::cin, lobbyName);
+            std::string lName;
+            std::getline(std::cin, lName);
 
-            LobbyMessage lm(lobbyName);
+            LobbyMessage lm(lName);
             lm.type = LobbyMessage::LOBBY_JOIN_REQUEST;
             socket.send(lm);
         }
@@ -97,6 +104,9 @@ void Client::input_thread()
             LobbyMessage lm(lobbyName);
             lm.type = LobbyMessage::LOBBY_QUIT;
             socket.send(lm);
+
+            game_->setPlaying(false);
+            game_->resetTableRequest();
         }
         else if (msg == "play"){
             if (game_->getTurn()){
@@ -106,8 +116,8 @@ void Client::input_thread()
                 socket.send(em);
 
                 sleep(SYNC_DELAY);
-                PlayMessage lp(lobbyName);
-                lp.type = PlayMessage::PLAYER_PLAY;
+                PlayMessage pm(lobbyName);
+                pm.type = PlayMessage::PLAYER_PLAY;
                 
                 int posX, posY;
                 std::cout << "PosX: ";
@@ -115,21 +125,16 @@ void Client::input_thread()
                 std::cout << "PosY: ";
                 std::cin >> posY;
 
-                lp.posX = posX;
-                lp.posY = posY;
-                lp.playerTurn = true;
+                pm.posX = posX;
+                pm.posY = posY;
+                pm.playerTurn = true;
 
-                socket.send(lp);
+                socket.send(pm);
             }
             else{
                 std::cout << "No es tu turno. No puedes realizar una jugada\n";
             }
         }
-        // ChatMessage em(nick,msg);
-        // em.type = ChatMessage::MESSAGE;
-
-        // // Enviar al servidor usando socket
-        // socket.send(em);
     }
 }
 
@@ -194,6 +199,8 @@ void Client::net_thread()
                     }
                     case LobbyMessage::LOBBY_QUIT_REPLY:{
                         std::cout << "Tu oponente " << lm.lobbyName << " ha abandonado la partida. Volviendo al menu principal.\n";
+                        game_->setPlaying(false);
+                        game_->resetTableRequest();
                         break;
                     }
                     default:
@@ -218,14 +225,18 @@ void Client::net_thread()
                         else{
                             std::cout << "Partida empezada. Es el turno del oponente\n";
                         }
+                        game_->setPlaying(true);
                         game_->setTurn(pm.playerTurn);
+                        if(game_->getTurn()) game_->setColor(Color::RED);
+                        else game_->setColor(Color::YELLOW);
                         break;
                     }
 					case PlayMessage::PLAYER_PLAY:{
+                        game_->reproducePlay(pm.posX,pm.posY);
 						std::cout << "New ficha just dropped on: " << pm.posX << " " << pm.posY << "\n";
 						game_->setTurn(pm.playerTurn);
 						if (pm.playerTurn) std::cout << "Es mi turno\n";
-						else std::cout << "El el turno del oponente\n";
+						else std::cout << "Es el turno del oponente\n";
 						break;
 					}
 
@@ -241,5 +252,23 @@ void Client::net_thread()
 			break;
         }
     }
+}
+
+void Client::sendPlay(int x, int y){
+
+    Message em(nick, "play");
+    em.type = Message::PLAY;
+
+    socket.send(em);
+
+    sleep(SYNC_DELAY);
+    PlayMessage pm(lobbyName);
+    pm.type = PlayMessage::PLAYER_PLAY;
+
+    pm.posX = x;
+    pm.posY = y;
+    pm.playerTurn = true;
+
+    socket.send(pm);
 }
 

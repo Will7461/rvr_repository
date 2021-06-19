@@ -171,7 +171,8 @@ public:
                             lobbyPair->second = clientSocket_;
                             lm.type = LobbyMessage::LOBBY_JOIN_ACCEPT;
                             clientSocket_->send(lm);
-
+                            
+                            sleep(SYNC_DELAY);
                             lobbyPair->first->send(em);
                             sleep(SYNC_DELAY);
                             lobbyPair->first->send(lm);
@@ -285,17 +286,20 @@ void startGame(Socket* player1, Socket* player2){
 
     Message em("server","");
     em.type = Message::PLAY;
-
-    firstPlayer->send(em);
-    secondPlayer->send(em);
+    
     sleep(SYNC_DELAY);
+    firstPlayer->send(em);
+    sleep(SYNC_DELAY);
+    secondPlayer->send(em);
 
     PlayMessage pm("");
     pm.type = PlayMessage::MessageType::INITIAL_TURN;
     pm.playerTurn = true;
+    sleep(SYNC_DELAY);
     firstPlayer->send(pm);
 
     pm.playerTurn = false;
+    sleep(SYNC_DELAY);
     secondPlayer->send(pm);
 }
 

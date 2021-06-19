@@ -1,5 +1,6 @@
 #include <thread>
 #include "Client.h"
+#include "SDLGame.h"
 
 int main(int argc, char **argv)
 {

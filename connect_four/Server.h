@@ -9,7 +9,6 @@
 #include "Socket.h"
 #include "Messages.h"
 
-#define SYNC_DELAY 0.2
 #define MAX_LOBBIES 10
 
 /**

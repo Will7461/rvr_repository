@@ -1,11 +1,15 @@
 #include "SDLGame.h"
+#include "Client.h"
 #include <iostream>
 
-SDLGame::SDLGame(string winTitle, int w, int h) : matrix(MATRIX_R, vector<std::pair<Vector2D, SlotState>> (MATRIX_C, std::make_pair(Vector2D(0,0),SlotState::EMPTY))) {
+SDLGame::SDLGame(string winTitle, int w, int h) : matrix(MATRIX_R, vector<std::pair<Vector2D, Color>> (MATRIX_C, std::make_pair(Vector2D(0,0),Color::EMPTY))) {
     windowTitle_ = winTitle;
     width_ = w;
     height_ = h;
 	exit = false;
+	myTurn = false;
+    resetTableReq = false;
+    playing = false;
 
     initSDL();
 
@@ -21,9 +25,11 @@ void SDLGame::Run(){
 	{
 		//Logic Update
 		if(resetTableReq) resetTable();
-
-		render();
-		handleEvents();
+		
+		if(playing){
+			render();
+			handleEvents();
+		}
 	}
 }
 
@@ -31,22 +37,22 @@ void SDLGame::Quit(){
 	exit = true;
 }
 
-void SDLGame::putChecker(int x, int y, SlotState state){
+void SDLGame::putChecker(int x, int y, Color state){
 
 	matrix[x][y].second = state;
 	Vector2D pos = matrix[x][y].first;
 
 	switch (state)
 	{
-	case SlotState::RED:{
+	case Color::RED:{
 		objects.push_back(SDLObject(pos, checker_w, checker_h, textures[TextureName::TEX_RED]));
 		break;
 	}
-	case SlotState::YELLOW:{
+	case Color::YELLOW:{
 		objects.push_back(SDLObject(pos, checker_w, checker_h, textures[TextureName::TEX_YELLOW]));
 		break;
 	}
-	case SlotState::EMPTY:{
+	case Color::EMPTY:{
 		break;
 	}
 	default:
@@ -54,8 +60,18 @@ void SDLGame::putChecker(int x, int y, SlotState state){
 	}
 }
 
+void SDLGame::reproducePlay(int x, int y){
+	Color otherColor = (myColor==Color::YELLOW) ? Color::RED : Color::YELLOW;
+	if(myTurn) putChecker(x,y,myColor);
+	else putChecker(x,y,otherColor);
+}
+
 void SDLGame::resetTableRequest(){
 	resetTableReq = true;
+}
+
+void SDLGame::setClient(Client* c){
+	client = c;
 }
 
 void SDLGame::initSDL(){
@@ -88,7 +104,6 @@ void SDLGame::initMatrix(){
 		for (int j = 0; j < MATRIX_C; j++)
 		{
 			Vector2D* pos = &matrix[i][j].first;
-			SlotState* state = &matrix[i][j].second;
 
 			pos->x = currentPos.x;
 			pos->y = currentPos.y;
@@ -98,6 +113,8 @@ void SDLGame::initMatrix(){
 		currentPos.x = r.x + 13;
 		currentPos.y += 96;
 	}
+
+	arrow = new SDLObject(Vector2D(matrix[0][0].first.x + arrowLeftOffset, matrix[0][0].first.y - arrowUpOffset), arrow_size, arrow_size, textures[TextureName::TEX_ARROW]);
 }
 
 void SDLGame::loadTextures(){
@@ -106,6 +123,7 @@ void SDLGame::loadTextures(){
 
 void SDLGame::closeSDL(){
 	delete table;
+	delete arrow;
 
 	for (uint i = 0; i < NUM_TEXTURES; i++) delete textures[i];
 
@@ -131,6 +149,7 @@ void SDLGame::render() const{
 	}
 
 	table->render();
+	arrow->render();
 	
 	SDL_RenderPresent(renderer_);
 }
@@ -143,6 +162,22 @@ void SDLGame::handleEvents(){
 		{
 			Quit();
 		}
+		else if(event.type == SDL_KEYDOWN){
+			switch (event.key.keysym.sym) {
+				case SDLK_SPACE:
+					if(myTurn) doPlay();
+					break;
+				case SDLK_LEFT:
+					moveArrow(-1);
+					break;
+				case SDLK_RIGHT:
+					moveArrow(1);
+					break;
+				case SDLK_ESCAPE:
+					Quit();
+					break;
+				}
+		}
 	}
 }
 
@@ -151,14 +186,40 @@ void SDLGame::resetTable(){
 	{
 		for (int j = 0; j < MATRIX_C; j++)
 		{
-			SlotState* state = &matrix[i][j].second;
-			*state = SlotState::EMPTY; 
+			Color* state = &matrix[i][j].second;
+			*state = Color::EMPTY; 
 		}
 	}
 	
 	objects.clear();
-
+	render();
 	resetTableReq = false;
+}
+
+void SDLGame::moveArrow(int d){
+	if(d<0){
+		currentArrowPos--;
+		if(currentArrowPos<0) currentArrowPos = MATRIX_C-1;
+		arrow->setPos(Vector2D(matrix[0][currentArrowPos].first.x + arrowLeftOffset, matrix[0][currentArrowPos].first.y - arrowUpOffset));
+	}
+	else if(d>0){
+		currentArrowPos++;
+		currentArrowPos%=MATRIX_C;
+		arrow->setPos(Vector2D(matrix[0][currentArrowPos].first.x + arrowLeftOffset, matrix[0][currentArrowPos].first.y - arrowUpOffset));
+	}
+}
+
+void SDLGame::doPlay(){
+	if(matrix[0][currentArrowPos].second != Color::EMPTY) return;
+
+	int i = MATRIX_R-1;
+	Color freeSlot;
+	do{
+		freeSlot = matrix[i][currentArrowPos].second;
+		i--;
+	}while (i>=0 && freeSlot != Color::EMPTY);
+	
+	client->sendPlay(i+1, currentArrowPos);
 }
 
 void SDLObject::render() const{
