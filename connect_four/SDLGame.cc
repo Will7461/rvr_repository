@@ -27,10 +27,8 @@ void SDLGame::Run(){
 		//Logic Update
 		if(resetTableReq) resetTable();
 		
-		if(playing){
-			render();
-			handleEvents();
-		}
+		render();
+		if(playing) handleEvents();
 	}
 }
 
@@ -103,7 +101,10 @@ void SDLGame::initSDL(){
 	// Carga texturas
 	loadTextures();
 
+	//Setup de la escena
 	table = new SDLObject(Vector2D(width_ * 0.23, height_ * 0.1), 700, 600, textures[TextureName::TEX_TABLE]);
+	titleScreen = new SDLObject(Vector2D((width_ * 0.5) - (textures[TextureName::TEX_TITLE]->getW() * 0.25), (height_ * 0.5) - (textures[TextureName::TEX_TITLE]->getH() * 0.25)),
+		textures[TextureName::TEX_TITLE]->getW() * 0.5, textures[TextureName::TEX_TITLE]->getH() * 0.5, textures[TextureName::TEX_TITLE]);
 
     // Esconder cursor
 	// SDL_ShowCursor(0);
@@ -162,10 +163,13 @@ void SDLGame::render() const{
 	for (SDLObject o : objects){
 		o.render();
 	}
+	if (!playing) titleScreen->render();
+	else{
+		table->render();
+		arrow->render();
+		if (endGameText && gameEnded) endGameText->render();
+	}
 
-	table->render();
-	arrow->render();
-	if (endGameText && gameEnded) endGameText->render();
 	
 	SDL_RenderPresent(renderer_);
 }
