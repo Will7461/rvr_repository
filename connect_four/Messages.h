@@ -13,7 +13,7 @@
 class Message: public Serializable
 {
 public:
-    static const size_t MESSAGE_SIZE = (sizeof(uint8_t) + sizeof(char) * 88) + (sizeof(std::string) * (MAX_LOBBIES + 1) + sizeof(bool) + sizeof(int) * 2);
+    static const size_t MESSAGE_SIZE = (sizeof(uint8_t) + sizeof(char) * 88) + (sizeof(std::string) * (MAX_LOBBIES + 1) + sizeof(bool) * 2 + sizeof(int) * 2);
 
     enum MessageType
     {
@@ -59,6 +59,7 @@ public:
     std::string lobbyList[MAX_LOBBIES];
 
     bool playerTurn = false;
+    bool playerWon = false;
     int posX = 0;
     int posY = 0;
 };

@@ -38,6 +38,10 @@ void Message::to_bin()
 
     tmp += sizeof(bool);
 
+    memcpy(tmp, &playerWon, sizeof(bool));
+
+    tmp += sizeof(bool);
+
     memcpy(tmp, &posX, sizeof(int));
 
     tmp += sizeof(int);
@@ -84,6 +88,10 @@ int Message::from_bin(char * bobj)
     tmp += sizeof(std::string);
 
     memcpy(&playerTurn, tmp, sizeof(bool));
+
+    tmp += sizeof(bool);
+
+    memcpy(&playerWon, tmp, sizeof(bool));
 
     tmp += sizeof(bool);
 

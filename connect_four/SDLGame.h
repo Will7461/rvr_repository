@@ -63,6 +63,7 @@ public:
     void resetTableRequest();
     void setClient(Client* c);
     void setPlaying(bool p) {playing = p;};
+    void gameFinished (bool won);
 
 private:
     void initSDL();

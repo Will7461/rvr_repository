@@ -74,6 +74,11 @@ void SDLGame::setClient(Client* c){
 	client = c;
 }
 
+void SDLGame::gameFinished(bool won){
+	if (won) std::cout << "You won the game!\n";
+	else std::cout << "You lost the game!\n";
+}
+
 void SDLGame::initSDL(){
     int sdlInit_ret = SDL_Init(SDL_INIT_EVERYTHING);
 
@@ -220,7 +225,6 @@ void SDLGame::doPlay(){
 	}while (i>=0 && freeSlot != Color::EMPTY);
 	printState();
 	bool winningPlay = checkPlayerWon(i+1, currentArrowPos);
-	if (winningPlay) std::cout << "YOU JUST WON YOU WONDERFUL HUMAN BEING\n";
 	client->sendPlay(i+1, currentArrowPos, winningPlay);
 }
 

@@ -180,11 +180,15 @@ void Client::net_thread()
                 break;
             }
             case Message::PLAYER_PLAY:{
+                std::cout << ms.playerWon << "\n";
                 game_->reproducePlay(ms.posX,ms.posY);
                 std::cout << "New ficha just dropped on: " << ms.posX << " " << ms.posY << "\n";
-                game_->setTurn(ms.playerTurn);
-                if (ms.playerTurn) std::cout << "Es mi turno\n";
-                else std::cout << "Es el turno del oponente\n";
+                if (ms.playerWon) game_->gameFinished(!ms.playerTurn);
+                else {
+                    game_->setTurn(ms.playerTurn);
+                    if (ms.playerTurn) std::cout << "Es mi turno\n";
+                    else std::cout << "Es el turno del oponente\n";
+                }
                 break;
             }
             default:
@@ -202,6 +206,7 @@ void Client::sendPlay(int x, int y, bool winningPlay){
     em.posX = x;
     em.posY = y;
     em.playerTurn = true;
+    em.playerWon = winningPlay;
 
     socket.send(em);
 }

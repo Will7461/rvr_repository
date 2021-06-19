@@ -176,7 +176,7 @@ public:
 
                 em.posX = cm.posX;
                 em.posY = cm.posY;
-
+                em.playerWon = cm.playerWon;
                 if (sockPair->first == clientSocket_){
                     em.playerTurn = false;
                     sockPair->first->send(em);
