@@ -57,30 +57,36 @@ public:
 
     void Run();
     void Quit();
-    bool getTurn() {return myTurn;};
-    void setTurn(bool t) {myTurn = t;};
-    void setColor(Color c){myColor = c;};
-    void putChecker(int x, int y, Color state);
+
     void reproducePlay(int x, int y);
-    void resetTableRequest();
-    void setClient(Client* c);
-    void setPlaying(bool p) {playing = p;};
+
     void gameFinished (bool won);
+    void startGame(bool turn);
+    void endGame();
 
 private:
     void initSDL();
     void initMatrix();
+    void createObjects();
     void loadTextures();
     void closeSDL();
     void render() const;
     void handleEvents();
-    void resetTable();
+    void removeTable();
     void moveArrow(int d);
     void doPlay();
     bool checkPlayerWon(int x, int y);
     int numCheckersInDir(int posX, int posY, int dirX, int dirY);
     bool isViable (int posX, int posY);
     void printState();
+    void setPlaying(bool p) {playing = p;};
+    bool getTurn() {return myTurn;};
+    void setTurn(bool t) {myTurn = t;};
+    void setColor(Color c){myColor = c;};
+    void setClient(Client* c);
+
+    void putChecker(int x, int y, Color state);
+    void removeTableRequest();
 
     Client* client;
 
@@ -107,7 +113,7 @@ private:
     int height_;
     bool exit;
     bool myTurn;
-    bool resetTableReq;
+    bool removeTableReq;
     bool playing;
     bool gameEnded;
 };

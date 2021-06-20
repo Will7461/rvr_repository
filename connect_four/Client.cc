@@ -80,8 +80,7 @@ void Client::input_thread()
             em.type = Message::LOBBY_QUIT;
             socket.send(em);
 
-            game_->setPlaying(false);
-            game_->resetTableRequest();
+            game_->endGame();
         }
         else if (msg == "play"){
             if (game_->getTurn()){
@@ -155,8 +154,7 @@ void Client::net_thread()
             }
             case Message::LOBBY_QUIT_REPLY:{
                 std::cout << "Tu oponente " << ms.lobbyName << " ha abandonado la partida. Volviendo al menu principal.\n";
-                game_->setPlaying(false);
-                game_->resetTableRequest();
+                game_->endGame();
                 break;
             }
         //============================================================================================================================================
@@ -173,10 +171,7 @@ void Client::net_thread()
                 else{
                     std::cout << "Es el turno del oponente\n";
                 }
-                game_->setPlaying(true);
-                game_->setTurn(ms.playerTurn);
-                if(game_->getTurn()) game_->setColor(Color::RED);
-                else game_->setColor(Color::YELLOW);
+                game_->startGame(ms.playerTurn);
                 break;
             }
             case Message::PLAYER_PLAY:{

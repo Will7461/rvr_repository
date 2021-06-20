@@ -8,13 +8,15 @@ SDLGame::SDLGame(string winTitle, int w, int h) : matrix(MATRIX_R, vector<std::p
     height_ = h;
 	exit = false;
 	myTurn = false;
-    resetTableReq = false;
+    removeTableReq = false;
     playing = false;
 	gameEnded = false;
 	
     initSDL();
 
 	initMatrix();
+
+	createObjects();
 }
 
 SDLGame::~SDLGame(){
@@ -25,7 +27,7 @@ void SDLGame::Run(){
 	while (!exit)
 	{
 		//Logic Update
-		if(resetTableReq) resetTable();
+		if(removeTableReq) removeTable();
 		
 		render();
 		if(playing) handleEvents();
@@ -65,8 +67,8 @@ void SDLGame::reproducePlay(int x, int y){
 	else putChecker(x,y,otherColor);
 }
 
-void SDLGame::resetTableRequest(){
-	resetTableReq = true;
+void SDLGame::removeTableRequest(){
+	removeTableReq = true;
 }
 
 void SDLGame::setClient(Client* c){
@@ -74,16 +76,30 @@ void SDLGame::setClient(Client* c){
 }
 
 void SDLGame::gameFinished(bool won){
+	gameEnded = true;
 	int texW = textures[TextureName::TEX_WIN]->getW();
 	int texH = textures[TextureName::TEX_WIN]->getH();
 	if (endGameText) delete endGameText;
-	gameEnded = true;
 	if (won) {
 		endGameText = new SDLObject(Vector2D(WINDOW_W/2 - texW / 2, WINDOW_H / 2 - texH / 2), texW, texH, textures[TextureName::TEX_WIN]);
 	}
 	else {
 		endGameText = new SDLObject(Vector2D(WINDOW_W/2 - texW / 2, WINDOW_H / 2 - texH / 2), texW, texH, textures[TextureName::TEX_LOSE]);
 	}
+}
+
+void SDLGame::startGame(bool turn){
+	setTurn(turn);
+	if(getTurn()) setColor(Color::RED);
+	else setColor(Color::YELLOW);
+
+	setPlaying(true);
+	gameEnded = false;
+}
+
+void SDLGame::endGame(){
+	setPlaying(false);
+	removeTableRequest();
 }
 
 void SDLGame::initSDL(){
@@ -101,13 +117,6 @@ void SDLGame::initSDL(){
 	// Carga texturas
 	loadTextures();
 
-	//Setup de la escena
-	table = new SDLObject(Vector2D(width_ * 0.23, height_ * 0.1), 700, 600, textures[TextureName::TEX_TABLE]);
-	titleScreen = new SDLObject(Vector2D((width_ * 0.5) - (textures[TextureName::TEX_TITLE]->getW() * 0.25), (height_ * 0.5) - (textures[TextureName::TEX_TITLE]->getH() * 0.25)),
-		textures[TextureName::TEX_TITLE]->getW() * 0.5, textures[TextureName::TEX_TITLE]->getH() * 0.5, textures[TextureName::TEX_TITLE]);
-
-    // Esconder cursor
-	// SDL_ShowCursor(0);
 }
 
 void SDLGame::initMatrix(){
@@ -128,8 +137,13 @@ void SDLGame::initMatrix(){
 		currentPos.x = r.x + 13;
 		currentPos.y += 96;
 	}
+}
 
+void SDLGame::createObjects(){
+	table = new SDLObject(Vector2D(width_ * 0.23, height_ * 0.1), 700, 600, textures[TextureName::TEX_TABLE]);
 	arrow = new SDLObject(Vector2D(matrix[0][0].first.x + arrowLeftOffset, matrix[0][0].first.y - arrowUpOffset), arrow_size, arrow_size, textures[TextureName::TEX_ARROW]);
+	titleScreen = new SDLObject(Vector2D((width_ * 0.5) - (textures[TextureName::TEX_TITLE]->getW() * 0.25), (height_ * 0.5) - (textures[TextureName::TEX_TITLE]->getH() * 0.25)),
+		textures[TextureName::TEX_TITLE]->getW() * 0.5, textures[TextureName::TEX_TITLE]->getH() * 0.5, textures[TextureName::TEX_TITLE]);
 	turnMarker_Player = new SDLObject(Vector2D(width_ * 0.02, height_ * 0.1), textures[TextureName::TEX_MARKER_PLAYER]->getW(), textures[TextureName::TEX_MARKER_PLAYER]->getH(), textures[TextureName::TEX_MARKER_PLAYER]);
 	turnMarker_Opponent = new SDLObject(Vector2D(width_ * 0.02, height_ * 0.1), textures[TextureName::TEX_MARKER_OPPONENT]->getW(), textures[TextureName::TEX_MARKER_OPPONENT]->getH(), textures[TextureName::TEX_MARKER_OPPONENT]);
 }
@@ -164,15 +178,17 @@ void SDLGame::render() const{
 
 	SDL_RenderClear(renderer_);
 
-	for (SDLObject o : objects){
-		o.render();
-	}
 	if (!playing) titleScreen->render();
 	else{
+		for (SDLObject o : objects){
+			o.render();
+		}
+
 		table->render();
-		arrow->render();
+		
 		if (myTurn) turnMarker_Player->render();
 		else turnMarker_Opponent->render();
+
 		if (endGameText && gameEnded) endGameText->render();
 	}
 
@@ -191,7 +207,7 @@ void SDLGame::handleEvents(){
 		else if(event.type == SDL_KEYDOWN){
 			switch (event.key.keysym.sym) {
 				case SDLK_SPACE:
-					if (gameEnded) resetTable();
+					if (gameEnded) removeTable();
 					else if(myTurn) doPlay();
 					break;
 				case SDLK_LEFT:
@@ -208,7 +224,7 @@ void SDLGame::handleEvents(){
 	}
 }
 
-void SDLGame::resetTable(){
+void SDLGame::removeTable(){
 	for (int i = 0; i <  MATRIX_R; i++)
 	{
 		for (int j = 0; j < MATRIX_C; j++)
@@ -217,11 +233,9 @@ void SDLGame::resetTable(){
 			*state = Color::EMPTY; 
 		}
 	}
-	resetTableReq = false;
-	gameEnded = false;
+	removeTableReq = false;
 
 	objects.clear();
-	render();
 }
 
 void SDLGame::moveArrow(int d){
