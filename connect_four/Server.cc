@@ -76,7 +76,9 @@ public:
                 Message em(cm.nick,cm.message,cm.lobbyName);
                 em.type = Message::MESSAGE;
 
+                if(sockPair->first)
                 sockPair->first->send(em);
+                if(sockPair->second)
                 sockPair->second->send(em);
 
                 break;
@@ -92,7 +94,7 @@ public:
                 l_mtx->lock();
                 if(lobbiesMap->count(cm.lobbyName) > 0 || lobbiesMap->size()>=10){
                     em.type = Message::LOBBY_DENY;
-                    clientSocket_->send(cm);
+                    clientSocket_->send(em);
                 }
                 else{
                     lobbiesMap->insert({cm.lobbyName, std::make_pair(clientSocket_,nullptr)});

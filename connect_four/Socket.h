@@ -69,16 +69,8 @@ public:
     Socket(int _sd, struct sockaddr * _sa, socklen_t _sa_len):sd(_sd), sa(*_sa),
         sa_len(_sa_len){};
 
-    virtual ~Socket(){ 
-        int valopc;
-        socklen_t lonopc = sizeof(int);
-        getsockopt(sd, SOL_SOCKET, SO_KEEPALIVE, &valopc, &lonopc);
-        if(valopc !=-1){
-
-            close(sd);
-            valopc = -1;
-            setsockopt(sd, SOL_SOCKET, SO_KEEPALIVE, &valopc, lonopc);
-        }
+    virtual ~Socket(){
+        close(sd);
     };
 
     /**

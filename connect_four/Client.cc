@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 Client::Client(const char * s, const char * p, const char * n, SDLGame* g) : socket(s, p),
-nick(n), game_(g){
+nick(n), game_(g), lobbyName(""){
     socket.connect();
     game_->setClient(this);
 }
@@ -37,6 +37,8 @@ void Client::leaveLobby(){
     em.type = Message::LOBBY_QUIT;
     socket.send(em);
 
+    lobbyName = "";
+
     game_->endGame();
 }
 
@@ -58,7 +60,18 @@ void Client::input_thread()
             continue;
         }
 
-        if(msg == "create"){
+        if(lobbyName!=""){
+            if(msg == "abandon"){
+                leaveLobby();
+            }
+            else{
+                Message em(nick,msg,lobbyName);
+                em.type = Message::MESSAGE;
+                socket.send(em);
+            }
+        }
+        else{
+            if(msg == "create"){
             std::cout << "Introduce nombre de lobby: ";
             std::string lName;
             std::getline(std::cin, lName);
@@ -67,30 +80,23 @@ void Client::input_thread()
             em.type = Message::LOBBY_REQUEST;
 
             socket.send(em);
-        }
-        else if(msg == "list"){
+            }
+            else if(msg == "list"){
 
-            Message em(nick,msg,"");
-            em.type = Message::LOBBY_ASK_LIST;
+                Message em(nick,msg,"");
+                em.type = Message::LOBBY_ASK_LIST;
 
-            socket.send(em);
-        }
-        else if(msg == "join"){
-            std::cout << "Introduce nombre de lobby al que quieres unirte: ";
-            std::string lName;
-            std::getline(std::cin, lName);
+                socket.send(em);
+            }
+            else if(msg == "join"){
+                std::cout << "Introduce nombre de lobby al que quieres unirte: ";
+                std::string lName;
+                std::getline(std::cin, lName);
 
-            Message em(nick,msg,lName);
-            em.type = Message::LOBBY_JOIN_REQUEST;
-            socket.send(em);
-        }
-        else if(msg == "abandon"){
-            leaveLobby();
-        }
-        else if(game_->getPlaying()){
-            Message em(nick,msg,lobbyName);
-            em.type = Message::MESSAGE;
-            socket.send(em);
+                Message em(nick,msg,lName);
+                em.type = Message::LOBBY_JOIN_REQUEST;
+                socket.send(em);
+            }
         }
     }
 }
@@ -104,7 +110,7 @@ void Client::net_thread()
 
         int r = socket.recv(ms);
         if(r==-1){
-            std::cerr << CYAN_COLOR << "[CONEXION CERRADA]" << RESET_COLOR << '\n';
+            std::cerr << RED_COLOR << "[CONEXION CERRADA]" << RESET_COLOR << '\n';
             break;
         }
         //Mostrar en pantalla el mensaje de la forma "nick: mensaje"
@@ -145,6 +151,7 @@ void Client::net_thread()
             case Message::LOBBY_QUIT_REPLY:{
                 std::cout << YELLOW_COLOR << "[TU OPONENTE " << ms.lobbyName << " HA ABANDONADO LA PARTIDA]" << RESET_COLOR << '\n';
                 std::cout << "Volviendo al menu principal...\n";
+                lobbyName = "";
                 game_->endGame();
                 break;
             }
@@ -165,9 +172,8 @@ void Client::net_thread()
                 break;
             }
             case Message::PLAYER_PLAY:{
-                std::cout << ms.playerWon << "\n";
                 game_->reproducePlay(ms.posX,ms.posY);
-                std::cout << "New ficha just dropped on: " << ms.posX << " " << ms.posY << "\n";
+                
                 if (ms.playerWon) game_->gameFinished(!ms.playerTurn);
                 else {
                     game_->setTurn(ms.playerTurn);
