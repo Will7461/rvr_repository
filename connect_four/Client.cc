@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 Client::Client(const char * s, const char * p, const char * n, SDLGame* g) : socket(s, p),
-        nick(n), game_(g){
+nick(n), game_(g){
     socket.connect();
     game_->setClient(this);
 }
@@ -81,26 +81,6 @@ void Client::input_thread()
             socket.send(em);
 
             game_->endGame();
-        }
-        else if (msg == "play"){
-            if (game_->getTurn()){
-                Message em(nick, msg, lobbyName);
-                em.type = Message::PLAYER_PLAY;
-                int posX, posY;
-                std::cout << "PosX: ";
-                std::cin >> posX;
-                std::cout << "PosY: ";
-                std::cin >> posY;
-
-                em.posX = posX;
-                em.posY = posY;
-                em.playerTurn = true;
-
-                socket.send(em);
-            }
-            else{
-                std::cout << "No es tu turno. No puedes realizar una jugada\n";
-            }
         }
     }
 }

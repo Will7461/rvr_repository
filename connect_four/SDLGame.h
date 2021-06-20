@@ -58,6 +58,10 @@ public:
     void Run();
     void Quit();
 
+    bool getTurn() {return myTurn;};
+    void setTurn(bool t) {myTurn = t;};
+    void setClient(Client* c);
+
     void reproducePlay(int x, int y);
 
     void gameFinished (bool won);
@@ -67,11 +71,14 @@ public:
 private:
     void initSDL();
     void initMatrix();
-    void createObjects();
+
     void loadTextures();
-    void closeSDL();
+    void createObjects();
     void render() const;
     void handleEvents();
+
+    void closeSDL();
+
     void removeTable();
     void moveArrow(int d);
     void doPlay();
@@ -80,10 +87,7 @@ private:
     bool isViable (int posX, int posY);
     void printState();
     void setPlaying(bool p) {playing = p;};
-    bool getTurn() {return myTurn;};
-    void setTurn(bool t) {myTurn = t;};
     void setColor(Color c){myColor = c;};
-    void setClient(Client* c);
 
     void putChecker(int x, int y, Color state);
     void removeTableRequest();

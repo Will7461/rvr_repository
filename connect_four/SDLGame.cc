@@ -30,6 +30,7 @@ void SDLGame::Run(){
 		if(removeTableReq) removeTable();
 		
 		render();
+
 		if(playing) handleEvents();
 	}
 }
@@ -192,7 +193,6 @@ void SDLGame::render() const{
 		if (endGameText && gameEnded) endGameText->render();
 	}
 
-	
 	SDL_RenderPresent(renderer_);
 }
 
@@ -207,7 +207,7 @@ void SDLGame::handleEvents(){
 		else if(event.type == SDL_KEYDOWN){
 			switch (event.key.keysym.sym) {
 				case SDLK_SPACE:
-					if (gameEnded) removeTable();
+					if (gameEnded) endGame();
 					else if(myTurn) doPlay();
 					break;
 				case SDLK_LEFT:
