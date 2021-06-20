@@ -14,9 +14,9 @@ SDLGame::SDLGame(string winTitle, int w, int h) : matrix(MATRIX_R, vector<std::p
 	
     initSDL();
 
-	initMatrix();
-
 	createObjects();
+
+	initMatrix();
 }
 
 SDLGame::~SDLGame(){
@@ -142,7 +142,8 @@ void SDLGame::initMatrix(){
 
 void SDLGame::createObjects(){
 	table = new SDLObject(Vector2D(width_ * 0.23, height_ * 0.1), 700, 600, textures[TextureName::TEX_TABLE]);
-	arrow = new SDLObject(Vector2D(matrix[0][0].first.x + arrowLeftOffset, matrix[0][0].first.y - arrowUpOffset), arrow_size, arrow_size, textures[TextureName::TEX_ARROW]);
+	SDL_Rect r = table->getDestRect();
+	arrow = new SDLObject(Vector2D(r.x + 13 + arrowLeftOffset, r.y + 13 - arrowUpOffset), arrow_size, arrow_size, textures[TextureName::TEX_ARROW]);
 	titleScreen = new SDLObject(Vector2D((width_ * 0.5) - (textures[TextureName::TEX_TITLE]->getW() * 0.25), (height_ * 0.5) - (textures[TextureName::TEX_TITLE]->getH() * 0.25)),
 		textures[TextureName::TEX_TITLE]->getW() * 0.5, textures[TextureName::TEX_TITLE]->getH() * 0.5, textures[TextureName::TEX_TITLE]);
 	turnMarker_Player = new SDLObject(Vector2D(width_ * 0.02, height_ * 0.1), textures[TextureName::TEX_MARKER_PLAYER]->getW(), textures[TextureName::TEX_MARKER_PLAYER]->getH(), textures[TextureName::TEX_MARKER_PLAYER]);
@@ -186,6 +187,7 @@ void SDLGame::render() const{
 		}
 
 		table->render();
+		arrow->render();
 		
 		if (myTurn) turnMarker_Player->render();
 		else turnMarker_Opponent->render();
