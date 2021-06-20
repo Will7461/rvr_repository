@@ -329,7 +329,7 @@ int SDLGame::numCheckersInDir(int posX, int posY, int dirX, int dirY){
 }
 
 bool SDLGame::isViable (int posX, int posY){
-	return (posX > 0 && posX < MATRIX_R && posY > 0 && posY < MATRIX_C);
+	return (posX >= 0 && posX < MATRIX_R && posY >= 0 && posY < MATRIX_C);
 }
 
 void SDLObject::render() const{
