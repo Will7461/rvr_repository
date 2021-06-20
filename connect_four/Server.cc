@@ -5,16 +5,15 @@
 class MessageThread
 {
 public:
-    MessageThread(int sd, struct sockaddr client, socklen_t clientlen, std::mutex* clients_mtx, std::vector<std::unique_ptr<Socket>>* _clientsVector,
+    MessageThread(int sd, struct sockaddr client, socklen_t clientlen, 
     std::mutex* lobbies_mtx, std::map<std::string, std::pair<Socket*,Socket*>>* _lobbiesMap) : 
-    c_mtx(clients_mtx), clientsVector(_clientsVector), l_mtx(lobbies_mtx), lobbiesMap(_lobbiesMap) {
+    l_mtx(lobbies_mtx), lobbiesMap(_lobbiesMap) {
 
         clientSocket_ = new Socket(sd, &client, clientlen);
 
     };
     ~MessageThread(){
-        c_mtx = nullptr;
-        clientsVector = nullptr;
+        delete clientSocket_;
         clientSocket_ = nullptr;
     };
     
@@ -44,31 +43,13 @@ public:
             // BASIC MSG
             //============================================================================================================================================
             case Message::LOGIN:{
-                std::unique_ptr<Socket> uS(clientSocket_);
-                c_mtx->lock();
-                clientsVector->push_back(std::move(uS));
-                c_mtx->unlock();
-                std::cout << GREEN_COLOR << "[" << cm.nick << " JOINED THE SERVER]" << RESET_COLOR << '\n';
+                std::cout << GREEN_COLOR << "[" << cm.nick << " SE UNE AL SERVIDOR]" << RESET_COLOR << '\n';
                 break;
             }
             case Message::LOGOUT:{
-                if(clientsVector->size()>0){
-                    auto it = clientsVector->begin();
-                    while (it != clientsVector->end())
-                    {
-                        if( *((*it).get()) == *clientSocket_ ) break;
-                        ++it;
-                    }
-
-                    if(it == clientsVector->end()) std::cerr << "[logout] No se ha encontrado cliente que desconectar\n";
-                    else{
-                        c_mtx->lock();
-                        clientsVector->erase(it);
-                        c_mtx->unlock();
-                        std::cout << YELLOW_COLOR << "[" << cm.nick << " LEFT THE SERVER]" << RESET_COLOR << '\n';
-                        active = false;
-                    }
-                }
+                
+                std::cout << YELLOW_COLOR << "[" << cm.nick << " DEJA EL SERVIDOR]" << RESET_COLOR << '\n';
+                active = false;
                 break;
             }
             case Message::MESSAGE:{
@@ -231,8 +212,6 @@ void startGame(Socket* player1, Socket* player2, Message m){
 }
 
 Socket* clientSocket_;
-std::mutex* c_mtx;
-std::vector<std::unique_ptr<Socket>>* clientsVector;
 
 std::mutex* l_mtx;
 std::map<std::string, std::pair<Socket*,Socket*>>* lobbiesMap;
@@ -257,8 +236,7 @@ void Server::do_conexions()
             return;
         }
 
-        MessageThread *mt = new MessageThread(client_sd, client, clientlen, &clients_mtx, &clients,
-        &lobbies_mtx, &lobbies);
+        MessageThread *mt = new MessageThread(client_sd, client, clientlen, &lobbies_mtx, &lobbies);
 
         std::thread([&mt](){
             mt->do_conexion();

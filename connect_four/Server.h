@@ -27,13 +27,6 @@ public:
     void do_conexions();
 
 private:
-    std::mutex clients_mtx;
-    /**
-     *  Lista de clientes conectados al servidor de Chat, representados por
-     *  su socket
-     */
-    std::vector<std::unique_ptr<Socket>> clients;
-
     std::mutex lobbies_mtx;
     /**
      *  Map de lobbies<Lobby Name,Lobby Full>
