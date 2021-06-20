@@ -99,8 +99,6 @@ int Socket::accept(struct sockaddr& client, socklen_t& clientelen){
     return -1;        
     }
 
-    std::cout << "Conexión desde " << host << " " << serv << '\n';
-
     return cliente_sd;
 }
 

@@ -30,6 +30,16 @@ void Client::logout()
     socket.send(em);
 }
 
+void Client::leaveLobby(){
+    std::cout << YELLOW_COLOR << "Abandonando la partida..." << RESET_COLOR << '\n';
+
+    Message em(nick,"",lobbyName);
+    em.type = Message::LOBBY_QUIT;
+    socket.send(em);
+
+    game_->endGame();
+}
+
 void Client::input_thread()
 {
     while (true)
@@ -38,6 +48,7 @@ void Client::input_thread()
         std::string msg;
         std::getline(std::cin, msg);
         if(msg=="!q" || msg=="quit"){
+            if(game_->getPlaying()) leaveLobby();
             logout();
             game_->Quit();
             break;
@@ -74,13 +85,12 @@ void Client::input_thread()
             socket.send(em);
         }
         else if(msg == "abandon"){
-            std::cout << "Abandonando la partida...\n";
-
+            leaveLobby();
+        }
+        else if(game_->getPlaying()){
             Message em(nick,msg,lobbyName);
-            em.type = Message::LOBBY_QUIT;
+            em.type = Message::MESSAGE;
             socket.send(em);
-
-            game_->endGame();
         }
     }
 }
@@ -94,7 +104,7 @@ void Client::net_thread()
 
         int r = socket.recv(ms);
         if(r==-1){
-            std::cerr << "Conexion cerrada.\n";
+            std::cerr << CYAN_COLOR << "[CONEXION CERRADA]" << RESET_COLOR << '\n';
             break;
         }
         //Mostrar en pantalla el mensaje de la forma "nick: mensaje"
@@ -103,7 +113,7 @@ void Client::net_thread()
         switch (ms.type)
         {
             case Message::MESSAGE:{
-                std::cout << ms.message << '\n';
+                std::cout << CYAN_COLOR << "(chat) [" << ms.nick << "]: " << ms.message << RESET_COLOR << '\n';
                 break;
             }
             //============================================================================================================================================
@@ -111,29 +121,30 @@ void Client::net_thread()
             //============================================================================================================================================
             case Message::LOBBY_ACCEPT:{
 
-                std::cout << "Lobby " << ms.lobbyName << " creado\nEsperando jugador...\n";
+                std::cout << MAGENTA_COLOR << "[LOBBY " << ms.lobbyName << " CREADO]:\nEsperando jugador..." << RESET_COLOR << '\n';
                 lobbyName = ms.lobbyName;
                 break;
             }
             case Message::LOBBY_DENY:{
                 
-                std::cout << "Lobby " << ms.lobbyName << " denegado por nombre repetido o máximo de lobbies creados.\n";
+                std::cout << RED_COLOR << "[LOBBY " << ms.lobbyName << " DENEGADO]:\nNombre repetido o máximo de lobbies creados." << RESET_COLOR << '\n';
                 break;
             }
             case Message::LOBBY_SEND_LIST:{
-                std::cout << "Lista de lobbies:\n";
+                std::cout << MAGENTA_COLOR << "[LISTA DE LOBBIES]:" << RESET_COLOR << '\n';
                 for(std::string lobbyName : ms.lobbyList){
-                    if(lobbyName.find("none") == std::string::npos) std::cout << lobbyName << '\n';
+                    if(lobbyName.find("none") == std::string::npos) std::cout << GREEN_COLOR << " " + lobbyName << RESET_COLOR << '\n';
                 }
                 break;
             }
             case Message::LOBBY_JOIN_DENY:{
-                std::cout << "Lobby " << ms.lobbyName << " denegado por nombre incorrecto o porque no existe.\n";
+                std::cout << RED_COLOR << "[LOBBY " << ms.lobbyName << " DENEGADO]:\nNo existe en la lista de lobbies." << RESET_COLOR << '\n';
                 //Habrá que guardar la lobby aquí supongo
                 break;
             }
             case Message::LOBBY_QUIT_REPLY:{
-                std::cout << "Tu oponente " << ms.lobbyName << " ha abandonado la partida. Volviendo al menu principal.\n";
+                std::cout << YELLOW_COLOR << "[TU OPONENTE " << ms.lobbyName << " HA ABANDONADO LA PARTIDA]" << RESET_COLOR << '\n';
+                std::cout << "Volviendo al menu principal...\n";
                 game_->endGame();
                 break;
             }
@@ -141,15 +152,14 @@ void Client::net_thread()
         // PLAYERS MSG
         //============================================================================================================================================
             case Message::INITIAL_TURN:{
-                std::cout << "Empieza la partida en el lobby " << ms.lobbyName << "!\n";
+                std::cout << MAGENTA_COLOR << "[EMPIEZA LA PARTIDA EN LOBBY " << ms.lobbyName << "]" << RESET_COLOR << '\n';
                 lobbyName = ms.lobbyName;
 
-                std::cout << "Partida empezada en lobby " << ms.lobbyName << ". ";
                 if (ms.playerTurn){
-                    std::cout << "Es mi turno.\n";
+                    std::cout << GREEN_COLOR << "[TU TURNO]"<< RESET_COLOR << '\n';
                 }
                 else{
-                    std::cout << "Es el turno del oponente\n";
+                    std::cout << GREEN_COLOR << "[TURNO DEL OPONENTE]" << RESET_COLOR << '\n';;
                 }
                 game_->startGame(ms.playerTurn);
                 break;
@@ -161,8 +171,8 @@ void Client::net_thread()
                 if (ms.playerWon) game_->gameFinished(!ms.playerTurn);
                 else {
                     game_->setTurn(ms.playerTurn);
-                    if (ms.playerTurn) std::cout << "Es mi turno\n";
-                    else std::cout << "Es el turno del oponente\n";
+                    if (ms.playerTurn) std::cout << GREEN_COLOR << "[TU TURNO]"<< RESET_COLOR << '\n';
+                    else std::cout << GREEN_COLOR << "[TURNO DEL OPONENTE]" << RESET_COLOR << '\n';;
                 }
                 break;
             }

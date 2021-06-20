@@ -10,6 +10,8 @@ int main(int argc, char **argv)
     srand(time(NULL)); //Usamos numeros aleatorios para decidir que jugador empieza la partida.
     Server es(argv[1], argv[2]);
 
+    std::cout << MAGENTA_COLOR <<"===[SERVIDOR INICIADO]===" << RESET_COLOR << '\n';
+
     es.do_conexions();
 
     return 0;

@@ -59,8 +59,10 @@ public:
     void Quit();
 
     bool getTurn() {return myTurn;};
+    bool getPlaying(){return playing;};
     void setTurn(bool t) {myTurn = t;};
     void setClient(Client* c);
+    void setPlaying(bool p) {playing = p;};
 
     void reproducePlay(int x, int y);
 
@@ -86,7 +88,6 @@ private:
     int numCheckersInDir(int posX, int posY, int dirX, int dirY);
     bool isViable (int posX, int posY);
     void printState();
-    void setPlaying(bool p) {playing = p;};
     void setColor(Color c){myColor = c;};
 
     void putChecker(int x, int y, Color state);

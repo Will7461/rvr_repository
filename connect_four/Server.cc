@@ -40,12 +40,15 @@ public:
 
             switch (cm.type)
             {
+            //============================================================================================================================================
+            // BASIC MSG
+            //============================================================================================================================================
             case Message::LOGIN:{
                 std::unique_ptr<Socket> uS(clientSocket_);
                 c_mtx->lock();
                 clientsVector->push_back(std::move(uS));
                 c_mtx->unlock();
-                std::cout << "[ " << cm.nick << " joined the chat ]\n";
+                std::cout << GREEN_COLOR << "[" << cm.nick << " JOINED THE SERVER]" << RESET_COLOR << '\n';
                 break;
             }
             case Message::LOGOUT:{
@@ -61,22 +64,21 @@ public:
                     c_mtx->lock();
                     clientsVector->erase(it);
                     c_mtx->unlock();
-                    std::cout << "[ " << cm.nick << " left the chat ]\n";
+                    std::cout << YELLOW_COLOR << "[" << cm.nick << " LEFT THE SERVER]" << RESET_COLOR << '\n';
                     active = false;
                 }
                 break;
             }
             case Message::MESSAGE:{
-                for(auto &cs : *clientsVector){
-                    if(*(cs.get()) == *clientSocket_) continue;
-                    else{
-                        int s = (cs.get())->send(cm);
-                        if(s==-1){
-                            std::cerr << "[message]: No se ha enviado el mensage correctamente\n";
-                            return;
-                        }
-                    }
-                }
+                auto mapElem = lobbiesMap->find(cm.lobbyName);
+                std::pair<Socket*, Socket*>* sockPair = &mapElem->second;
+
+                Message em(cm.nick,cm.message,cm.lobbyName);
+                em.type = Message::MESSAGE;
+
+                sockPair->first->send(em);
+                sockPair->second->send(em);
+
                 break;
             }
             //============================================================================================================================================
@@ -206,12 +208,12 @@ void startGame(Socket* player1, Socket* player2, Message m){
 
     int random = rand() % 2;
     if (random == 0){
-		std::cout << "Empieza el host\n";
+		std::cout << BLUE_COLOR << "[TURNO INICIAL PARA ANFITRION]" << RESET_COLOR << '\n';
         firstPlayer = player1;
         secondPlayer = player2;
     }
     else{
-		std::cout << "Empieza el visitante\n";
+		std::cout << BLUE_COLOR << "[TURNO INICIAL PARA VISITANTE]" << RESET_COLOR << '\n';
         firstPlayer = player2;
         secondPlayer = player1;
     }

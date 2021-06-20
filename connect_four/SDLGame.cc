@@ -31,7 +31,7 @@ void SDLGame::Run(){
 		
 		render();
 
-		if(playing) handleEvents();
+		handleEvents();
 	}
 }
 
@@ -204,10 +204,22 @@ void SDLGame::handleEvents(){
 	{
 		if (event.type == SDL_QUIT)
 		{
+			if(playing) client->leaveLobby();
+			client->logout();
 			Quit();
 		}
 		else if(event.type == SDL_KEYDOWN){
+
 			switch (event.key.keysym.sym) {
+				case SDLK_ESCAPE:
+					if(playing) client->leaveLobby();
+					client->logout();
+					Quit();
+					break;
+			}
+
+			if(playing){
+				switch (event.key.keysym.sym) {
 				case SDLK_SPACE:
 					if (gameEnded) endGame();
 					else if(myTurn) doPlay();
@@ -218,10 +230,8 @@ void SDLGame::handleEvents(){
 				case SDLK_RIGHT:
 					moveArrow(1);
 					break;
-				case SDLK_ESCAPE:
-					Quit();
-					break;
 				}
+			}
 		}
 	}
 }
