@@ -39,6 +39,12 @@ void SDLGame::Quit(){
 	exit = true;
 }
 
+/**
+ * Pinta una textura de una ficha en una posición concreta.
+ * Param x: Posición x de la ficha a colocar.
+ * Param y: Posición y de la ficha a colocar.
+ * Param state: Jugador al que pertenece (Red, yellow, empty)
+ */
 void SDLGame::putChecker(int x, int y, Color state){
 
 	matrix[x][y].second = state;
@@ -62,6 +68,12 @@ void SDLGame::putChecker(int x, int y, Color state){
 	}
 }
 
+/**
+ * Coloca una ficha de un jugador en una posición concreta.
+ * Este método se llama al recibir la jugada de un jugador.
+ * Param x: Posición en x de la ficha.
+ * Param y: Posición en y de la ficha.
+ */
 void SDLGame::reproducePlay(int x, int y){
 	Color otherColor = (myColor==Color::YELLOW) ? Color::RED : Color::YELLOW;
 	if(myTurn) putChecker(x,y,myColor);
@@ -76,6 +88,10 @@ void SDLGame::setClient(Client* c){
 	client = c;
 }
 
+/**
+ * Establece el estado del juego como acabado y pinta un texto de victoria/derrota.
+ * Param won: Indica si el jugador ha ganado o ha perdido.
+ */
 void SDLGame::gameFinished(bool won){
 	gameEnded = true;
 	int texW = textures[TextureName::TEX_WIN]->getW();
@@ -89,6 +105,10 @@ void SDLGame::gameFinished(bool won){
 	}
 }
 
+/**
+ * Establece el color y el turno del jugador.
+ * Param turn: Indica si el jugador empieza la partida o va segundo.
+ */
 void SDLGame::startGame(bool turn){
 	setTurn(turn);
 	if(getTurn()) setColor(Color::RED);
@@ -98,11 +118,17 @@ void SDLGame::startGame(bool turn){
 	gameEnded = false;
 }
 
+/**
+ * Acaba la partida.
+ */
 void SDLGame::endGame(){
 	setPlaying(false);
 	removeTableRequest();
 }
 
+/**
+ * Inicialización de recursos de SDL
+ */
 void SDLGame::initSDL(){
     int sdlInit_ret = SDL_Init(SDL_INIT_EVERYTHING);
 
@@ -120,6 +146,10 @@ void SDLGame::initSDL(){
 
 }
 
+/**
+ * Define la posición global de cada casilla en el tablero.
+ * Las posiciones se guardan en una matriz desde la que se accederá desde otros métodos.
+ */
 void SDLGame::initMatrix(){
 	SDL_Rect r = table->getDestRect();
 	Vector2D currentPos(r.x + 13,r.y + 13);
@@ -140,6 +170,9 @@ void SDLGame::initMatrix(){
 	}
 }
 
+/**
+ * Crea objetos que se usarán a lo largo de toda la partida.
+ */
 void SDLGame::createObjects(){
 	table = new SDLObject(Vector2D(width_ * 0.23, height_ * 0.1), 700, 600, textures[TextureName::TEX_TABLE]);
 	SDL_Rect r = table->getDestRect();
@@ -202,6 +235,7 @@ void SDLGame::handleEvents(){
 	SDL_Event event;
 	while (SDL_PollEvent(&event) && !exit)
 	{
+		//Abandona el lobby y cierra el juego.
 		if (event.type == SDL_QUIT)
 		{
 			if(playing) client->leaveLobby();
@@ -221,12 +255,15 @@ void SDLGame::handleEvents(){
 			if(playing){
 				switch (event.key.keysym.sym) {
 				case SDLK_SPACE:
+					//Vuelve al menú principal.
 					if (gameEnded){
 						endGame();
 						client->leaveLobby();
 					}
+					//Pone una ficha donde esté la flecha.
 					else if(myTurn) doPlay();
 					break;
+				//Mueve la flecha para dejar una casilla.
 				case SDLK_LEFT:
 					moveArrow(-1);
 					break;
@@ -239,6 +276,9 @@ void SDLGame::handleEvents(){
 	}
 }
 
+/**
+ * Borra las fichas de los jugadores.
+ */
 void SDLGame::removeTable(){
 	for (int i = 0; i <  MATRIX_R; i++)
 	{
@@ -252,7 +292,10 @@ void SDLGame::removeTable(){
 
 	objects.clear();
 }
-
+/**
+ * Mueve la flecha para colocar las fichas.
+ * Param d: Dirección izquierda o derecha
+ */
 void SDLGame::moveArrow(int d){
 	if(d<0){
 		currentArrowPos--;
@@ -266,20 +309,28 @@ void SDLGame::moveArrow(int d){
 	}
 }
 
+/**
+ * Coloca una ficha en la posición de la flecha.
+ */
 void SDLGame::doPlay(){
 	if(matrix[0][currentArrowPos].second != Color::EMPTY) return;
 
-	int i = MATRIX_R-1;
+	int i = MATRIX_R-1; //Altura del tablero
 	Color freeSlot;
-	do{
+	do{ //La ficha cae en la última posición libre en su columna.
 		freeSlot = matrix[i][currentArrowPos].second;
 		i--;
 	}while (i>=0 && freeSlot != Color::EMPTY);
-	//printState();
+
 	bool winningPlay = checkPlayerWon(i+1, currentArrowPos);
 	client->sendPlay(i+1, currentArrowPos, winningPlay);
 }
 
+/**
+ * Calcula si el jugador ha ganado la partida.
+ * Param x: Posición en x de la ficha que acaba de colocar.
+ * Param y: Posición en y de la ficha que acaba de colocar.
+ */
 bool SDLGame::checkPlayerWon(int x, int y){
 	//Horizontal
 	int numRight = numCheckersInDir(x, y, 0, 1);
@@ -308,6 +359,9 @@ bool SDLGame::checkPlayerWon(int x, int y){
 	return false;
 }
 
+/**
+ * Imprime en consola el estado de la partida. Método para debuggear.
+ */
 void SDLGame::printState(){
 	std::cout << "Estado actual de la partida:\n";
 	for (int k = 0; k < MATRIX_R; k++){
@@ -320,14 +374,26 @@ void SDLGame::printState(){
 	}
 }
 
+/**
+ * Función recursiva que devuelve el número de casillas consecutivas de un jugador en una dirección concreta.
+ * Param posX: Posición en x de la casilla.
+ * Param posY: Posición en y de la casilla.
+ * Param dirX: Dirección en x en la que se está comprobando.
+ * Param dirY: Dirección en y en la que se está comprobando.
+ */
 int SDLGame::numCheckersInDir(int posX, int posY, int dirX, int dirY){
+	//Obtiene la siguiente ficha.
 	int newPosX = posX + dirX;
 	int newPosY = posY + dirY;
+	//Si la posición de la ficha es viable y pertenece al jugador, analizamos la siguiente ficha.
 	if (isViable(newPosX, newPosY) && matrix[newPosX][newPosY].second == myColor) 
 		return 1 + numCheckersInDir(newPosX, newPosY, dirX, dirY);
 	else return 0;
 }
 
+/**
+ * Devuelve si la posición de una ficha es viable (No se sale del tablero)
+ */
 bool SDLGame::isViable (int posX, int posY){
 	return (posX >= 0 && posX < MATRIX_R && posY >= 0 && posY < MATRIX_C);
 }

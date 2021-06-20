@@ -9,6 +9,9 @@ nick(n), game_(g), lobbyName(""){
     game_->setClient(this);
 }
 
+/**
+ * Envia un mensaje al servidor para que le registre.
+ */
 void Client::login()
 {
     std::string msg;
@@ -19,6 +22,9 @@ void Client::login()
     socket.send(em);
 }
 
+/**
+ * Desconecta al cliente con el server.
+ */
 void Client::logout()
 {
     // Completar
@@ -30,23 +36,28 @@ void Client::logout()
     socket.send(em);
 }
 
+/**
+ * El cliente abandona la sala y se lo coumunica al cliente. También cierra el juego.
+ */
 void Client::leaveLobby(){
     std::cout << YELLOW_COLOR << "[SALIENDO DE LOBBY]" << RESET_COLOR << '\n';
 
     Message em(nick,"",lobbyName);
     em.type = Message::LOBBY_QUIT;
     socket.send(em);
-
     lobbyName = "";
 
     game_->endGame();
 }
 
+
+/**
+ * Hilo por el que el cliente envía mensajes al servidor dependiendo del input que se le proporcione.
+ */
 void Client::input_thread()
 {
     while (true)
     {
-        // Leer stdin con std::getline
         std::string msg;
         std::getline(std::cin, msg);
         if(msg=="!q" || msg=="quit"){
@@ -104,6 +115,10 @@ void Client::input_thread()
     }
 }
 
+
+/**
+ * Hilo por el que el cliente escucha al servidor y procesa sus mensajes
+ */
 void Client::net_thread()
 {
     while(true)
@@ -148,12 +163,11 @@ void Client::net_thread()
             }
             case Message::LOBBY_JOIN_DENY:{
                 std::cout << RED_COLOR << "[LOBBY " << ms.lobbyName << " DENEGADO]:\nNo existe en la lista de lobbies." << RESET_COLOR << '\n';
-                //Habrá que guardar la lobby aquí supongo
                 break;
             }
             case Message::LOBBY_QUIT_REPLY:{
                 std::cout << YELLOW_COLOR << "[TU OPONENTE " << ms.lobbyName << " HA ABANDONADO EL LOBBY]" << RESET_COLOR << '\n';
-                std::cout << "Volviendo al menu principal...\n";
+                std::cout << MAGENTA_COLOR << "Volviendo al menu principal..." << RESET_COLOR << '\n' ;
                 lobbyName = "";
                 game_->endGame();
                 break;
@@ -191,9 +205,13 @@ void Client::net_thread()
         }
     }
 }
-
+/**
+ * Manda la jugada de un cliente al servidor
+ * param x: Posición x de la ficha colocada
+ * param y: Posición y de la ficha colocada
+ * param winningPlay: Indica si la jugada del jugador ha conseguido su victoria. (Fin de la partida)
+ */
 void Client::sendPlay(int x, int y, bool winningPlay){
-
     Message em(nick, "play", lobbyName);
     em.type = Message::PLAYER_PLAY;
 
@@ -204,4 +222,3 @@ void Client::sendPlay(int x, int y, bool winningPlay){
 
     socket.send(em);
 }
-

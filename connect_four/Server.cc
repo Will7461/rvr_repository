@@ -43,6 +43,8 @@ public:
             //============================================================================================================================================
             // BASIC MSG
             //============================================================================================================================================
+            
+            //Registra al cliente en el vector de clientes.
             case Message::LOGIN:{
                 std::unique_ptr<Socket> uS(clientSocket_);
                 c_mtx->lock();
@@ -51,6 +53,8 @@ public:
                 std::cout << GREEN_COLOR << "[" << cm.nick << " JOINED THE SERVER]" << RESET_COLOR << '\n';
                 break;
             }
+
+            //Borra al cliente del vector de clientes.
             case Message::LOGOUT:{
                 if(clientsVector->size()>0){
                     auto it = clientsVector->begin();
@@ -71,6 +75,8 @@ public:
                 }
                 break;
             }
+
+            //Mensaje de chat
             case Message::MESSAGE:{
                 auto mapElem = lobbiesMap->find(cm.lobbyName);
                 std::pair<Socket*, Socket*>* sockPair = &mapElem->second;
@@ -88,16 +94,20 @@ public:
             //============================================================================================================================================
             // LOBBY MSG
             //============================================================================================================================================
+            
+            //Petición de un cliente para crear una lobby.
             case Message::LOBBY_REQUEST:{
-                // Logica para comprobar si se puede crear un lobby
-
                 Message em("server","",cm.lobbyName);
                 
                 l_mtx->lock();
+
+                //Si la lobby indicada ya existe o hemos llegado al tope, rechazamos su petición.
                 if(lobbiesMap->count(cm.lobbyName) > 0 || lobbiesMap->size()>=10){
                     em.type = Message::LOBBY_DENY;
                     clientSocket_->send(em);
                 }
+
+                //Añade la lobby al mapa y guarda el cliente como host de la sala.
                 else{
                     lobbiesMap->insert({cm.lobbyName, std::make_pair(clientSocket_,nullptr)});
                     em.type = Message::LOBBY_ACCEPT;
@@ -107,10 +117,9 @@ public:
 
                 break;
             }
-            case Message::LOBBY_ASK_LIST:{
-                // Logica para enviar la lista de lobbies disponibles
-                // al cliente
 
+            //Petición para devolver una lista con las salas disponibles. (No llenas)
+            case Message::LOBBY_ASK_LIST:{
                 Message em("server","","");
                 em.type = Message::LOBBY_SEND_LIST;
 
@@ -130,19 +139,24 @@ public:
                 clientSocket_->send(em);
                 break;
             }
+
+            //Petición de un cliente para entrar en una sala.
             case Message::LOBBY_JOIN_REQUEST:{
                 Message em("server","", cm.lobbyName);
 
                 l_mtx->lock();
                 auto lobbyIt = lobbiesMap->find(cm.lobbyName);
                 std::pair<Socket*, Socket*>* lobbyPair = &lobbyIt->second;
+
+                //Si la lobby no existe o ya está llena, rechazamos su petición.
                 if(lobbiesMap->count(cm.lobbyName) == 0 ||
                     lobbiesMap->count(cm.lobbyName)>0 && lobbyPair->second != nullptr){
                     em.type = Message::LOBBY_JOIN_DENY;
                     clientSocket_->send(em);
                 }
+
+                //Añadimos el cliente al lobby(dentro del mapa) y empieza la partida.
                 else{
-                    //Añadir el otro socket al mapa.
                     lobbyPair->second = clientSocket_;
 
                     startGame(lobbyPair->first, lobbyPair->second, em);
@@ -151,10 +165,14 @@ public:
 
                 break;  
             }
+
+            //Uno de los clientes abandona la sala.
             case Message::LOBBY_QUIT:{
-                auto mapElem = lobbiesMap->find(cm.lobbyName); //Encontramos al oponente
+                auto mapElem = lobbiesMap->find(cm.lobbyName); //Encontramos la sala
                 std::pair<Socket*, Socket*>* sockPair = &mapElem->second;
                 Socket* opponentSocket = nullptr;
+                //Distinguimos entre host/visitante porque el visitante le comunicaremos
+                //que el oponente ha dejado la sala. 
                 if (sockPair->first == clientSocket_) {
                     opponentSocket = sockPair->second;
                 }
@@ -173,7 +191,10 @@ public:
             //============================================================================================================================================
             // PLAYERS MSG
             //============================================================================================================================================
+            
+            //El cliente envía su jugada
             case Message::PLAYER_PLAY:{
+                //Encontramos el lobby al que pertenece.
                 auto mapElem = lobbiesMap->find(cm.lobbyName);
                 std::pair<Socket*, Socket*>* sockPair = &mapElem->second;
 
@@ -183,6 +204,7 @@ public:
                 em.posX = cm.posX;
                 em.posY = cm.posY;
                 em.playerWon = cm.playerWon;
+                //El siguiente turno será del jugador que NO nos haya enviado la jugada.
                 if (sockPair->first == clientSocket_){
                     em.playerTurn = false;
                     sockPair->first->send(em);
@@ -206,6 +228,9 @@ public:
     
 private:
 
+/**
+ * Decide aleatoriamente que jugador dentro de la sala empieza la partida y se lo comunica.
+ */
 void startGame(Socket* player1, Socket* player2, Message m){
     Socket* firstPlayer;
     Socket* secondPlayer;
@@ -242,6 +267,9 @@ std::map<std::string, std::pair<Socket*,Socket*>>* lobbiesMap;
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 
+/**
+ * Hilo para recibir conexiones de nuevos clientes.
+ */
 void Server::do_conexions()
 {
     //Gestion de conexiones entrantes
@@ -260,6 +288,7 @@ void Server::do_conexions()
         MessageThread *mt = new MessageThread(client_sd, client, clientlen, &clients_mtx, &clients,
         &lobbies_mtx, &lobbies);
 
+        //Crea un hilo para enviar/recibir mensajes de ese cliente en concrecto.
         std::thread([&mt](){
             mt->do_conexion();
 
