@@ -31,7 +31,7 @@ void Client::logout()
 }
 
 void Client::leaveLobby(){
-    std::cout << YELLOW_COLOR << "Abandonando la partida..." << RESET_COLOR << '\n';
+    std::cout << YELLOW_COLOR << "[SALIENDO DE LOBBY]" << RESET_COLOR << '\n';
 
     Message em(nick,"",lobbyName);
     em.type = Message::LOBBY_QUIT;
@@ -97,6 +97,9 @@ void Client::input_thread()
                 em.type = Message::LOBBY_JOIN_REQUEST;
                 socket.send(em);
             }
+            else{
+                std::cout << RED_COLOR << "[COMANDO NO RECONOCIDO]" << RESET_COLOR << '\n';
+            }
         }
     }
 }
@@ -149,7 +152,7 @@ void Client::net_thread()
                 break;
             }
             case Message::LOBBY_QUIT_REPLY:{
-                std::cout << YELLOW_COLOR << "[TU OPONENTE " << ms.lobbyName << " HA ABANDONADO LA PARTIDA]" << RESET_COLOR << '\n';
+                std::cout << YELLOW_COLOR << "[TU OPONENTE " << ms.lobbyName << " HA ABANDONADO EL LOBBY]" << RESET_COLOR << '\n';
                 std::cout << "Volviendo al menu principal...\n";
                 lobbyName = "";
                 game_->endGame();

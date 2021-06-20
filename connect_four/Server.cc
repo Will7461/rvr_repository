@@ -52,20 +52,22 @@ public:
                 break;
             }
             case Message::LOGOUT:{
-                auto it = clientsVector->begin();
-                while (it != clientsVector->end())
-                {
-                    if( *((*it).get()) == *clientSocket_ ) break;
-                    ++it;
-                }
+                if(clientsVector->size()>0){
+                    auto it = clientsVector->begin();
+                    while (it != clientsVector->end())
+                    {
+                        if( *((*it).get()) == *clientSocket_ ) break;
+                        ++it;
+                    }
 
-                if(it == clientsVector->end()) std::cerr << "[logout] No se ha encontrado cliente que desconectar\n";
-                else{
-                    c_mtx->lock();
-                    clientsVector->erase(it);
-                    c_mtx->unlock();
-                    std::cout << YELLOW_COLOR << "[" << cm.nick << " LEFT THE SERVER]" << RESET_COLOR << '\n';
-                    active = false;
+                    if(it == clientsVector->end()) std::cerr << "[logout] No se ha encontrado cliente que desconectar\n";
+                    else{
+                        c_mtx->lock();
+                        clientsVector->erase(it);
+                        c_mtx->unlock();
+                        std::cout << YELLOW_COLOR << "[" << cm.nick << " LEFT THE SERVER]" << RESET_COLOR << '\n';
+                        active = false;
+                    }
                 }
                 break;
             }

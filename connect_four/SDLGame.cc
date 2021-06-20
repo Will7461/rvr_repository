@@ -163,8 +163,8 @@ void SDLGame::closeSDL(){
 
 	for (uint i = 0; i < NUM_TEXTURES; i++) delete textures[i];
 
-	matrix.clear();
-	objects.clear();
+	if(matrix.size()>0) matrix.clear();
+	if(objects.size()>0) objects.clear();
 
     SDL_DestroyRenderer(renderer_);
 	renderer_ = nullptr;
@@ -221,7 +221,10 @@ void SDLGame::handleEvents(){
 			if(playing){
 				switch (event.key.keysym.sym) {
 				case SDLK_SPACE:
-					if (gameEnded) endGame();
+					if (gameEnded){
+						endGame();
+						client->leaveLobby();
+					}
 					else if(myTurn) doPlay();
 					break;
 				case SDLK_LEFT:
