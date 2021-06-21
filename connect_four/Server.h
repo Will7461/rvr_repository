@@ -26,6 +26,8 @@ public:
      */
     void do_conexions();
 
+    void input_thread();
+
 private:
     std::mutex clients_mtx;
     /**

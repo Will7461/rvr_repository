@@ -1,23 +1,22 @@
 #include "Server.h"
 #include <time.h>
 #include <stdlib.h>
+#include <signal.h>
+#include <vector>
 
 class MessageThread
 {
 public:
-    MessageThread(int sd, struct sockaddr client, socklen_t clientlen,
-    std::mutex* lobbies_mtx, std::map<std::string, std::pair<Socket*,Socket*>>* lobbiesMap_) : 
-     l_mtx(lobbies_mtx), lobbiesMap(lobbiesMap_) {
+    MessageThread(int sd_, struct sockaddr client_, socklen_t clientlen_,
+    std::mutex* lobbies_mtx, std::map<std::string, std::pair<Socket*,Socket*>>* lobbiesMap_) : sd(sd_), client(client_), clientlen(clientlen_),
+     l_mtx(lobbies_mtx), lobbiesMap(lobbiesMap_){
 
-        clientSocket_ = std::make_unique<Socket>(sd, &client, clientlen);
-
-    };
-    ~MessageThread(){
-        
     };
     
     void do_conexion()
     {
+        Socket clientSocket_(sd, &client, clientlen);
+        printf("Address of new client is %p\n", (void *)&clientSocket_);
         bool active = true;
         //Gestion de la conexion
         while (active)
@@ -30,7 +29,7 @@ public:
 
             Message cm;
 
-            int soc = clientSocket_->recv(cm);
+            int soc = clientSocket_.recv(cm);
             if(soc==-1){
                 std::cerr << "Error en socket.recv()\n";
                 return;
@@ -47,12 +46,6 @@ public:
                 std::cout << GREEN_COLOR << "[" << cm.nick << " JOINED THE SERVER]" << RESET_COLOR << '\n';
                 break;
             }
-            case Message::LOGOUT:{  
-                std::cout << YELLOW_COLOR << "[" << cm.nick << " LEFT THE SERVER]" << RESET_COLOR << '\n';
-                active = false;                  
-                break;
-            }
-
             //Mensaje de chat
             case Message::MESSAGE:{
                 auto mapElem = lobbiesMap->find(cm.lobbyName);
@@ -68,6 +61,11 @@ public:
 
                 break;
             }
+            case Message::LOGOUT:{  
+                std::cout << YELLOW_COLOR << "[" << cm.nick << " LEFT THE SERVER]" << RESET_COLOR << '\n';
+                active = false;                  
+                break;
+            }
             //============================================================================================================================================
             // LOBBY MSG
             //============================================================================================================================================
@@ -81,14 +79,14 @@ public:
                 //Si la lobby indicada ya existe o hemos llegado al tope, rechazamos su petición.
                 if(lobbiesMap->count(cm.lobbyName) > 0 || lobbiesMap->size()>=10){
                     em.type = Message::LOBBY_DENY;
-                    clientSocket_->send(em);
+                    clientSocket_.send(em);
                 }
 
                 //Añade la lobby al mapa y guarda el cliente como host de la sala.
                 else{
-                    lobbiesMap->insert({cm.lobbyName, std::make_pair(clientSocket_.get(),nullptr)});
+                    lobbiesMap->insert({cm.lobbyName, std::make_pair(&clientSocket_,nullptr)});
                     em.type = Message::LOBBY_ACCEPT;
-                    clientSocket_->send(em);
+                    clientSocket_.send(em);
                 }
                 l_mtx->unlock();
 
@@ -113,7 +111,7 @@ public:
                 }
                 l_mtx->unlock();
 
-                clientSocket_->send(em);
+                clientSocket_.send(em);
                 break;
             }
 
@@ -129,13 +127,13 @@ public:
                 if(lobbiesMap->count(cm.lobbyName) == 0 ||
                     lobbiesMap->count(cm.lobbyName)>0 && lobbyPair->second != nullptr){
                     em.type = Message::LOBBY_JOIN_DENY;
-                    clientSocket_->send(em);
+                    clientSocket_.send(em);
                 }
 
                 //Añadimos el cliente al lobby(dentro del mapa) y empieza la partida.
                 else{
                     //Añadir el otro socket al mapa.
-                    lobbyPair->second = clientSocket_.get();
+                    lobbyPair->second = &clientSocket_;
 
                     startGame(lobbyPair->first, lobbyPair->second, em);
                 }
@@ -152,7 +150,7 @@ public:
 
                 //Distinguimos entre host/visitante porque el visitante le comunicaremos
                 //que el oponente ha dejado la sala. 
-                if (sockPair->first == clientSocket_.get()) {
+                if (sockPair->first == &clientSocket_) {
                     opponentSocket = sockPair->second;
                 }
                 else opponentSocket = sockPair->first;
@@ -184,7 +182,7 @@ public:
                 em.posY = cm.posY;
                 em.playerWon = cm.playerWon;
                 //El siguiente turno será del jugador que NO nos haya enviado la jugada.
-                if (sockPair->first == clientSocket_.get()){
+                if (sockPair->first == &clientSocket_){
                     em.playerTurn = false;
                     sockPair->first->send(em);
                     em.playerTurn = true;
@@ -234,7 +232,9 @@ void startGame(Socket* player1, Socket* player2, Message m){
     secondPlayer->send(m);
 }
 
-std::unique_ptr<Socket> clientSocket_;
+int sd;
+struct sockaddr client;
+socklen_t clientlen;
 
 std::mutex* l_mtx;
 std::map<std::string, std::pair<Socket*,Socket*>>* lobbiesMap;
@@ -242,15 +242,18 @@ std::map<std::string, std::pair<Socket*,Socket*>>* lobbiesMap;
 };
 
 // -----------------------------------------------------------------------------
+void constructMessageThread(int sd_, struct sockaddr client_, socklen_t clientlen_,
+    std::mutex* lobbies_mtx, std::map<std::string, std::pair<Socket*,Socket*>>* lobbiesMap_) {
+    MessageThread mt(sd_, client_, clientlen_, lobbies_mtx, lobbiesMap_);
+    mt.do_conexion();
+}
 // -----------------------------------------------------------------------------
-
 /**
  * Hilo para recibir conexiones de nuevos clientes.
  */
 void Server::do_conexions()
 {
     //Gestion de conexiones entrantes
-    
     while (true)
     {
         struct sockaddr client;
@@ -262,13 +265,8 @@ void Server::do_conexions()
             return;
         }
 
-        MessageThread *mt = new MessageThread(client_sd, client, clientlen, &lobbies_mtx, &lobbies);
-        printf("Address of new client is %p\n", (void *)mt);
-        //Crea un hilo para enviar/recibir mensajes de ese cliente en concrecto.
-        std::thread([&mt](){
-            mt->do_conexion();
+        std::thread thr(constructMessageThread,client_sd, client, clientlen, &lobbies_mtx, &lobbies);
+        thr.detach();
 
-            delete mt;
-        }).detach();
     }
 }

@@ -12,7 +12,10 @@ int main(int argc, char **argv)
 
     std::cout << MAGENTA_COLOR <<"===[SERVIDOR INICIADO]===" << RESET_COLOR << '\n';
 
-    es.do_conexions();
+    std::thread net_thread([&es](){ es.do_conexions(); });
+    net_thread.detach();
+
+    sleep(10000);
 
     return 0;
 }
