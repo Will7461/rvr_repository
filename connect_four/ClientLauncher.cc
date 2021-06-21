@@ -23,11 +23,12 @@ int main(int argc, char **argv)
     Client ec(argv[1], argv[2], argv[3], game);
 
     std::thread net_thread([&ec](){ ec.net_thread(); });
-    net_thread.detach();
 
     ec.login();
 
     ec.input_thread();
+
+    net_thread.join();
 
     return 0;
 }

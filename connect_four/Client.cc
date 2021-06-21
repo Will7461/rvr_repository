@@ -2,6 +2,8 @@
 #include "SDLGame.h"
 #include <time.h>
 #include <stdlib.h>
+#include <algorithm>
+#include <cctype>
 
 Client::Client(const char * s, const char * p, const char * n, SDLGame* g) : socket(s, p),
 nick(n), game_(g), lobbyName(""){
@@ -27,10 +29,7 @@ void Client::login()
  */
 void Client::logout()
 {
-    // Completar
-    std::string msg;
-
-    Message em(nick, msg, "");
+    Message em(nick, "", "");
     em.type = Message::LOGOUT;
 
     socket.send(em);
@@ -50,7 +49,12 @@ void Client::leaveLobby(){
     game_->endGame();
 }
 
-
+std::string Client::toLower(std::string const& s){
+    std::string lower = s;
+    std::transform(lower.begin(), lower.end(), lower.begin(),
+    [](unsigned char c){ return std::tolower(c); });
+    return lower;
+}
 /**
  * Hilo por el que el cliente envía mensajes al servidor dependiendo del input que se le proporcione.
  */
@@ -60,10 +64,10 @@ void Client::input_thread()
     {
         std::string msg;
         std::getline(std::cin, msg);
-        if(msg=="!q" || msg=="quit"){
+        if(msg =="!q" || toLower(msg)=="quit"){
             if(game_->getPlaying()) leaveLobby();
             logout();
-            game_->Quit();
+            std::cerr << RED_COLOR << "[SALIENDO DEL JUEGO]" << RESET_COLOR << '\n';
             break;
         }
         else if(msg.length()>80){
@@ -72,7 +76,7 @@ void Client::input_thread()
         }
 
         if(lobbyName!=""){
-            if(msg == "abandon"){
+            if(toLower(msg) == "abandon"){
                 leaveLobby();
             }
             else{
@@ -82,7 +86,7 @@ void Client::input_thread()
             }
         }
         else{
-            if(msg == "create"){
+            if(toLower(msg) == "create"){
             std::cout << "Introduce nombre de lobby: ";
             std::string lName;
             std::getline(std::cin, lName);
@@ -92,14 +96,14 @@ void Client::input_thread()
 
             socket.send(em);
             }
-            else if(msg == "list"){
+            else if(toLower(msg) == "list"){
 
                 Message em(nick,msg,"");
                 em.type = Message::LOBBY_ASK_LIST;
 
                 socket.send(em);
             }
-            else if(msg == "join"){
+            else if(toLower(msg) == "join"){
                 std::cout << "Introduce nombre de lobby al que quieres unirte: ";
                 std::string lName;
                 std::getline(std::cin, lName);
@@ -129,6 +133,7 @@ void Client::net_thread()
         int r = socket.recv(ms);
         if(r==-1){
             std::cerr << RED_COLOR << "[CONEXION CERRADA]" << RESET_COLOR << '\n';
+            game_->Quit();
             break;
         }
         //Mostrar en pantalla el mensaje de la forma "nick: mensaje"
