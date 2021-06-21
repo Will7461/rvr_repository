@@ -43,7 +43,7 @@ public:
             
             //Registra al cliente en el vector de clientes.
             case Message::LOGIN:{
-                std::cout << GREEN_COLOR << "[" << cm.nick << " JOINED THE SERVER]" << RESET_COLOR << '\n';
+                std::cout << GREEN_COLOR << "[" << cm.nick << " SE UNE AL SERVIDOR]" << RESET_COLOR << '\n';
                 break;
             }
             //Mensaje de chat
@@ -62,7 +62,7 @@ public:
                 break;
             }
             case Message::LOGOUT:{  
-                std::cout << YELLOW_COLOR << "[" << cm.nick << " LEFT THE SERVER]" << RESET_COLOR << '\n';
+                std::cout << RED_COLOR << "[" << cm.nick << " DEJA EL SERVIDOR]" << RESET_COLOR << '\n';
                 active = false;                  
                 break;
             }
@@ -79,16 +79,17 @@ public:
                 //Si la lobby indicada ya existe o hemos llegado al tope, rechazamos su petición.
                 if(lobbiesMap->count(cm.lobbyName) > 0 || lobbiesMap->size()>=10){
                     em.type = Message::LOBBY_DENY;
-                    clientSocket_.send(em);
                 }
-
                 //Añade la lobby al mapa y guarda el cliente como host de la sala.
                 else{
                     lobbiesMap->insert({cm.lobbyName, std::make_pair(&clientSocket_,nullptr)});
                     em.type = Message::LOBBY_ACCEPT;
-                    clientSocket_.send(em);
                 }
                 l_mtx->unlock();
+                
+                clientSocket_.send(em);
+
+                std::cout << CYAN_COLOR << "[LOBBY "<< em.lobbyName << " CREADO]" << RESET_COLOR << '\n';
 
                 break;
             }
@@ -148,19 +149,20 @@ public:
                 std::pair<Socket*, Socket*>* sockPair = &mapElem->second;
                 Socket* opponentSocket = nullptr;
 
-                //Distinguimos entre host/visitante porque el visitante le comunicaremos
-                //que el oponente ha dejado la sala. 
+                //Avisamos al oponente que ha dejado la sala. 
                 if (sockPair->first == &clientSocket_) {
                     opponentSocket = sockPair->second;
                 }
                 else opponentSocket = sockPair->first;
 
-                Message em("server","",cm.lobbyName);
+                Message em(cm.nick,"",cm.lobbyName);
 
                 if (opponentSocket){
                     em.type = Message::LOBBY_QUIT_REPLY; 
-                    opponentSocket->send(em); 
+                    opponentSocket->send(em);
                 }
+
+                std::cout << YELLOW_COLOR << "[" << cm.nick << " DEJA EL LOBBY " << cm.lobbyName << "]\nSe ha eliminado el lobby " << GREEN_COLOR << cm.lobbyName << YELLOW_COLOR << " de la lista." << RESET_COLOR << '\n';
 
                 lobbiesMap->erase(mapElem); //Acaba la partida y los eliminamos del mapa.
                 break;
@@ -213,12 +215,12 @@ void startGame(Socket* player1, Socket* player2, Message m){
 
     int random = rand() % 2;
     if (random == 0){
-		std::cout << BLUE_COLOR << "[TURNO INICIAL PARA ANFITRION]" << RESET_COLOR << '\n';
+		std::cout << BLUE_COLOR << "[TURNO INICIAL PARA ANFITRION EN LOBBY " << m.lobbyName << "]" << RESET_COLOR << '\n';
         firstPlayer = player1;
         secondPlayer = player2;
     }
     else{
-		std::cout << BLUE_COLOR << "[TURNO INICIAL PARA VISITANTE]" << RESET_COLOR << '\n';
+		std::cout << BLUE_COLOR << "[TURNO INICIAL PARA VISITANTE EN LOBBY " << m.lobbyName << "]" << RESET_COLOR << '\n';
         firstPlayer = player2;
         secondPlayer = player1;
     }
@@ -246,6 +248,20 @@ void constructMessageThread(int sd_, struct sockaddr client_, socklen_t clientle
     MessageThread mt(sd_, client_, clientlen_, lobbies_mtx, lobbiesMap_);
     mt.do_conexion();
 }
+
+void Server::input_thread(){
+    while (true)
+    {
+        std::string inp;
+        std::getline(std::cin, inp);
+        if(inp =="Quit" || inp=="quit"){
+            std::cerr << RED_COLOR << "[CERRANDO SERVIDOR]" << RESET_COLOR << '\n';
+            socket.socketClose();
+            break;
+        }
+    }
+}
+
 // -----------------------------------------------------------------------------
 /**
  * Hilo para recibir conexiones de nuevos clientes.
@@ -266,18 +282,5 @@ void Server::do_conexions()
 
         std::thread thr(constructMessageThread,client_sd, client, clientlen, &lobbies_mtx, &lobbies);
         thr.detach();
-    }
-}
-
-void Server::input_thread(){
-    while (true)
-    {
-        std::string inp;
-        std::getline(std::cin, inp);
-        if(inp =="Quit" || inp=="quit"){
-            std::cerr << RED_COLOR << "[CERRANDO SERVIDOR]" << RESET_COLOR << '\n';
-            socket.socketClose();
-            break;
-        }
     }
 }

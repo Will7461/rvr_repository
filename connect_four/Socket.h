@@ -152,7 +152,7 @@ protected:
      *  Representación binaria del extremo, usada por servidor y cliente
      */
     struct sockaddr sa;
-    socklen_t       sa_len;
+    socklen_t sa_len;
 };
 
 #endif /* SOCKET_H_ */

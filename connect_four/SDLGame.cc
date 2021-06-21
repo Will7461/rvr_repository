@@ -36,6 +36,7 @@ void SDLGame::Run(){
 }
 
 void SDLGame::Quit(){
+	std::cerr << RED_COLOR << "[SALIENDO DEL JUEGO]" << RESET_COLOR << '\n';
 	exit = true;
 }
 
@@ -126,6 +127,11 @@ void SDLGame::endGame(){
 	removeTableRequest();
 }
 
+void SDLGame::disconnect(){
+	if(getPlaying()) client->leaveLobby();
+	std::cerr << RED_COLOR << "[DESCONECTANDO DE SERVIDOR...]" << RESET_COLOR << '\n';
+	client->logout();
+}
 /**
  * Inicialización de recursos de SDL
  */
@@ -235,42 +241,29 @@ void SDLGame::handleEvents(){
 	SDL_Event event;
 	while (SDL_PollEvent(&event) && !exit)
 	{
-		//Abandona el lobby y cierra el juego.
-		if (event.type == SDL_QUIT)
-		{
-			if(playing) client->leaveLobby();
-			client->logout();
-			Quit();
-		}
-		else if(event.type == SDL_KEYDOWN){
-
+		if(event.type == SDL_KEYDOWN && playing){
 			switch (event.key.keysym.sym) {
-				case SDLK_ESCAPE:
-					if(playing) client->leaveLobby();
-					client->logout();
-					Quit();
-					break;
-			}
-
-			if(playing){
-				switch (event.key.keysym.sym) {
-				case SDLK_SPACE:
-					//Vuelve al menú principal.
-					if (gameEnded){
-						endGame();
-						client->leaveLobby();
-					}
-					//Pone una ficha donde esté la flecha.
-					else if(myTurn) doPlay();
-					break;
-				//Mueve la flecha para dejar una casilla.
-				case SDLK_LEFT:
-					moveArrow(-1);
-					break;
-				case SDLK_RIGHT:
-					moveArrow(1);
-					break;
+			//Abandona el lobby.
+			case SDLK_ESCAPE:
+				endGame();
+				client->leaveLobby();
+				break;
+			case SDLK_SPACE:
+				//Vuelve al menú principal una vez terminada la partida.
+				if (gameEnded){
+					endGame();
+					client->leaveLobby();
 				}
+				//Pone una ficha donde esté la flecha.
+				else if(myTurn) doPlay();
+				break;
+			//Mueve la flecha para dejar una casilla.
+			case SDLK_LEFT:
+				moveArrow(-1);
+				break;
+			case SDLK_RIGHT:
+				moveArrow(1);
+				break;
 			}
 		}
 	}

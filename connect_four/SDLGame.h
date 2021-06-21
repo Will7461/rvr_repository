@@ -69,6 +69,7 @@ public:
     void gameFinished (bool won);
     void startGame(bool turn);
     void endGame();
+    void disconnect();
 
 private:
     void initSDL();

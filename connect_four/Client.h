@@ -65,5 +65,7 @@ private:
     std::string lobbyName;
 
     SDLGame* game_;
+
+    bool input;
 };
 

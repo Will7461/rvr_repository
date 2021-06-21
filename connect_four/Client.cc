@@ -6,7 +6,7 @@
 #include <cctype>
 
 Client::Client(const char * s, const char * p, const char * n, SDLGame* g) : socket(s, p),
-nick(n), game_(g), lobbyName(""){
+nick(n), game_(g), lobbyName(""), input(true){
     socket.connect();
     game_->setClient(this);
 }
@@ -60,14 +60,14 @@ std::string Client::toLower(std::string const& s){
  */
 void Client::input_thread()
 {
-    while (true)
+    while (input)
     {
         std::string msg;
         std::getline(std::cin, msg);
         if(toLower(msg)=="quit"){
-            if(game_->getPlaying()) leaveLobby();
-            logout();
-            std::cerr << RED_COLOR << "[SALIENDO DEL JUEGO]" << RESET_COLOR << '\n';
+            game_->disconnect();
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            input = false;
             break;
         }
         else if(msg.length()>80){
@@ -133,7 +133,10 @@ void Client::net_thread()
         int r = socket.recv(ms);
         if(r==-1){
             std::cerr << RED_COLOR << "[CONEXION CERRADA]" << RESET_COLOR << '\n';
-            game_->Quit();
+            if(game_){
+                game_->Quit();
+                game_=nullptr;
+            }
             break;
         }
         //Mostrar en pantalla el mensaje de la forma "nick: mensaje"
@@ -167,11 +170,11 @@ void Client::net_thread()
                 break;
             }
             case Message::LOBBY_JOIN_DENY:{
-                std::cout << RED_COLOR << "[LOBBY " << ms.lobbyName << " DENEGADO]:\nNo existe en la lista de lobbies." << RESET_COLOR << '\n';
+                std::cout << RED_COLOR << "[LOBBY " << ms.lobbyName << " DENEGADO]:\nNo existe en la lista de lobbies o ya no está disponible." << RESET_COLOR << '\n';
                 break;
             }
             case Message::LOBBY_QUIT_REPLY:{
-                std::cout << YELLOW_COLOR << "[TU OPONENTE " << ms.lobbyName << " HA ABANDONADO EL LOBBY]" << RESET_COLOR << '\n';
+                std::cout << YELLOW_COLOR << "[TU OPONENTE " << ms.nick << " HA ABANDONADO EL LOBBY]" << RESET_COLOR << '\n';
                 std::cout << MAGENTA_COLOR << "Volviendo al menu principal..." << RESET_COLOR << '\n' ;
                 lobbyName = "";
                 game_->endGame();
@@ -209,6 +212,8 @@ void Client::net_thread()
 			break;
         }
     }
+    // Fuerza el cierre si todavia se pide input por consola.
+    if(input) exit(0);
 }
 /**
  * Manda la jugada de un cliente al servidor

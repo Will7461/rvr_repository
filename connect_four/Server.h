@@ -20,13 +20,13 @@ public:
         socket.listen(16);
     };
 
+    void input_thread();
+
     /**
      *  Thread principal del servidor recibe mensajes en el socket y
      *  lo distribuye a los clientes. Mantiene actualizada la lista de clientes
      */
     void do_conexions();
-
-    void input_thread();
 
 private:
     std::mutex clients_mtx;
