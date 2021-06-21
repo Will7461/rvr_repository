@@ -16,7 +16,7 @@ public:
     void do_conexion()
     {
         Socket clientSocket_(sd, &client, clientlen);
-        printf("Address of new client is %p\n", (void *)&clientSocket_);
+
         bool active = true;
         //Gestion de la conexion
         while (active)
@@ -204,7 +204,6 @@ public:
     }
     
 private:
-
 /**
  * Decide aleatoriamente que jugador dentro de la sala empieza la partida y se lo comunica.
  */
@@ -262,11 +261,23 @@ void Server::do_conexions()
 
         if( client_sd==-1 ){
             std::cerr << "Error at socket.accept()" << strerror(errno) << '\n';
-            return;
+            break;
         }
 
         std::thread thr(constructMessageThread,client_sd, client, clientlen, &lobbies_mtx, &lobbies);
         thr.detach();
+    }
+}
 
+void Server::input_thread(){
+    while (true)
+    {
+        std::string inp;
+        std::getline(std::cin, inp);
+        if(inp =="Quit" || inp=="quit"){
+            std::cerr << RED_COLOR << "[CERRANDO SERVIDOR]" << RESET_COLOR << '\n';
+            socket.socketClose();
+            break;
+        }
     }
 }

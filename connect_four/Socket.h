@@ -70,7 +70,13 @@ public:
         sa_len(_sa_len){};
 
     virtual ~Socket(){
+        socketClose();
+    };
+
+    void socketClose(){
+        if(sd>=0)
         close(sd);
+        sd = -1;
     };
 
     /**

@@ -64,7 +64,7 @@ void Client::input_thread()
     {
         std::string msg;
         std::getline(std::cin, msg);
-        if(msg =="!q" || toLower(msg)=="quit"){
+        if(toLower(msg)=="quit"){
             if(game_->getPlaying()) leaveLobby();
             logout();
             std::cerr << RED_COLOR << "[SALIENDO DEL JUEGO]" << RESET_COLOR << '\n';

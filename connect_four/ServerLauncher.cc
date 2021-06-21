@@ -15,7 +15,7 @@ int main(int argc, char **argv)
     std::thread net_thread([&es](){ es.do_conexions(); });
     net_thread.detach();
 
-    sleep(10000);
+    es.input_thread();
 
     return 0;
 }
