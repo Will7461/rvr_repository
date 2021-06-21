@@ -6,8 +6,8 @@ class MessageThread
 {
 public:
     MessageThread(int sd, struct sockaddr client, socklen_t clientlen,
-    std::mutex* lobbies_mtx, std::map<std::string, std::pair<Socket*,Socket*>>* _lobbiesMap) : 
-     l_mtx(lobbies_mtx), lobbiesMap(_lobbiesMap) {
+    std::mutex* lobbies_mtx, std::map<std::string, std::pair<Socket*,Socket*>>* lobbiesMap_) : 
+     l_mtx(lobbies_mtx), lobbiesMap(lobbiesMap_) {
 
         clientSocket_ = std::make_unique<Socket>(sd, &client, clientlen);
 
